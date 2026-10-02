@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>제주 J플래너</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍊</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stone: #f4f0e6;
+    --stone-dim: #e9e2d2;
+    --basalt: #26241f;
+    --basalt-soft: #44413a;
+    --tangerine: #e2762c;
+    --tangerine-deep: #c2601e;
+    --ocean: #2d5d72;
+    --oreum: #4c6b4f;
+    --line: #d9d0ba;
+    --card-bg: #fffdf8;
+    --text: #2a2721;
+    --text-dim: #716b5c;
+    --danger: #a84632;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --stone: #1b1915;
+      --stone-dim: #242019;
+      --basalt: #0f0e0b;
+      --basalt-soft: #2c2922;
+      --tangerine: #f0863f;
+      --tangerine-deep: #e2762c;
+      --ocean: #5a93ab;
+      --oreum: #7fa082;
+      --line: #3a362c;
+      --card-bg: #221f19;
+      --text: #ece6d8;
+      --text-dim: #a69e8b;
+      --danger: #d97759;
+    }
+  }
+  :root[data-theme="dark"] {
+    --stone: #1b1915;
+    --stone-dim: #242019;
+    --basalt: #0f0e0b;
+    --basalt-soft: #2c2922;
+    --tangerine: #f0863f;
+    --tangerine-deep: #e2762c;
+    --ocean: #5a93ab;
+    --oreum: #7fa082;
+    --line: #3a362c;
+    --card-bg: #221f19;
+    --text: #ece6d8;
+    --text-dim: #a69e8b;
+    --danger: #d97759;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--stone);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 64px; }
+
+  header.hero {
+    background: var(--basalt);
+    color: var(--stone);
+    padding: env(safe-area-inset-top, 0px) 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero .texture {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 30%, rgba(226,118,44,0.16) 0, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(45,93,114,0.22) 0, transparent 45%);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 760px; margin: 0 auto; padding: 40px 20px 32px; position: relative; }
+  .hero-eyebrow {
+    font-size: 13px; color: var(--tangerine); font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  h1.hero-title {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: clamp(32px, 7vw, 44px);
+    line-height: 1.15;
+    margin: 10px 0 6px;
+  }
+  .hero-sub { color: #c9c2b0; font-size: 15px; margin: 0; }
+
+  .logi-strip {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 24px 0 8px;
+  }
+  .logi-item {
+    background: var(--card-bg);
+    padding: 14px 16px;
+  }
+  .logi-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  .logi-value { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
+  .logi-value small { display: block; font-weight: 400; color: var(--text-dim); font-size: 12.5px; margin-top: 2px; }
+
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin: 36px 0 14px;
+  }
+
+  nav.days {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 6px;
+    margin-bottom: 18px;
+    scrollbar-width: none;
+  }
+  nav.days::-webkit-scrollbar { display: none; }
+  .day-tab {
+    flex: 0 0 auto;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .day-tab[aria-selected="true"] {
+    background: var(--tangerine);
+    border-color: var(--tangerine);
+    color: #fff;
+  }
+  .day-tab .cnt {
+    font-size: 11.5px;
+    opacity: .75;
+    margin-left: 4px;
+  }
+
+  .day-panel { display: none; }
+  .day-panel.active { display: block; }
+
+  .timeline { position: relative; padding-left: 2px; }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry:last-of-type { border-bottom: none; }
+
+  .entry-time {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--ocean);
+    padding-top: 10px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  .entry-time::placeholder { color: var(--text-dim); font-weight: 400; }
+
+  .entry-body { min-width: 0; }
+  .entry-title {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    padding: 8px 0 2px;
+    font-family: inherit;
+  }
+  .entry-title::placeholder { color: var(--text-dim); font-weight: 400; }
+  .entry-note {
+    width: 100%;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    font-family: inherit;
+    line-height: 1.5;
+    padding: 0 0 4px;
+    overflow: hidden;
+  }
+  .entry-note::placeholder { color: var(--line); }
+
+  .entry-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 8px 4px;
+    border-radius: 6px;
+  }
+  .entry-del:hover { color: var(--danger); background: rgba(168,70,50,0.08); }
+
+  .add-row {
+    margin-top: 10px;
+    width: 100%;
+    padding: 13px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color .15s, color .15s;
+  }
+  .add-row:hover { border-color: var(--tangerine); color: var(--tangerine-deep); }
+
+  .empty-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    padding: 28px 10px 18px;
+  }
+
+  .footer-note {
+    margin-top: 40px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+
+  @media (max-width: 420px) {
+    .logi-strip { grid-template-columns: 1fr; }
+    .entry { grid-template-columns: 52px 1fr auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="texture"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">J플래너 · JEJU</div>
+    <h1 class="hero-title">제주 3박4일</h1>
+    <p class="hero-sub">2026.10.07 (수) — 2026.10.10 (토)</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="logi-strip" id="logiStrip"></div>
+
+  <div id="syncNote" style="display:none; font-size:12.5px; color:var(--text-dim); margin:12px 2px 0; line-height:1.5;"></div>
+
+  <div class="section-title">일정</div>
+
+  <nav class="days" id="dayTabs"></nav>
+
+  <div id="dayPanels"></div>
+
+  <div class="footer-note">
+    확정된 항공편·렌터카·주차 일정만 기본으로 채워져 있어요. 나머지 칸은 직접 입력해서 채워가시면 됩니다.
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "jeju-jplanner-v1";
+  var DOC_PATH = "plan/jeju-2026-10";
+
+  var defaultData = {
+    logistics: [
+      { label: "가는 편", value: "7C117  김포→제주", sub: "11:55 → 13:10" },
+      { label: "오는 편", value: "7C122  제주→김포", sub: "13:45 → 15:00" },
+      { label: "김포공항 주차", value: "국내선 제2주차장 2·3층", sub: "입차 10/7 10:00 · 출차 10/10 16:00" },
+      { label: "렌터카", value: "더뉴 레이(고급형) · 슈퍼자차", sub: "인수 10/7 14:00 · 반납 10/10 12:30까지" },
+      { label: "숙소", value: "사계절송당 (1·2·3호)", sub: "제주시 중산간동로 2042-8 · 3박" }
+    ],
+    days: [
+      {
+        label: "Day 1",
+        date: "10/7 (수)",
+        entries: [
+          { time: "10:00", title: "김포공항 주차", note: "국내선 제2주차장 주차타워 2·3층 입차" },
+          { time: "11:55", title: "김포→제주 (7C117)", note: "13:10 제주 도착" },
+          { time: "14:00", title: "렌터카 인수", note: "더뉴 레이 26년형(고급형), 슈퍼자차" },
+          { time: "", title: "", note: "" }
+        ]
+      },
+      { label: "Day 2", date: "10/8 (목)", entries: [] },
+      { label: "Day 3", date: "10/9 (금)", entries: [] },
+      {
+        label: "Day 4",
+        date: "10/10 (토)",
+        entries: [
+          { time: "", title: "", note: "" },
+          { time: "12:30", title: "렌터카 반납", note: "반납 마감 시간까지 공항 도착" },
+          { time: "13:45", title: "제주→김포 (7C122)", note: "15:00 김포 도착" },
+          { time: "16:00", title: "주차장 출차", note: "예약된 출차 마감 시간" }
+        ]
+      }
+    ]
+  };
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.days)) return parsed;
+      }
+    } catch (e) { /* ignore, fall back to default */ }
+    return JSON.parse(JSON.stringify(defaultData));
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* storage unavailable — edits still work this session */ }
+  }
+
+  var state = loadLocal();
+  var activeDay = 0;
+
+  // --- shared sync (db capability) -----------------------------------
+  var dbDoc = null;          // DocumentReference once resolved
+  var syncMode = "local";    // "local" | "shared" | "read-only"
+  var writeTimer = null;
+  var applyingRemote = false;
+
+  var syncNote = document.getElementById("syncNote");
+  function setSyncNote(text) {
+    if (!text) { syncNote.style.display = "none"; return; }
+    syncNote.textContent = text;
+    syncNote.style.display = "block";
+  }
+
+  function scheduleWrite() {
+    saveLocal();
+    if (!dbDoc || syncMode === "read-only") return;
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(function () {
+      dbDoc.set(state).catch(function (err) {
+        if (err && err.code === "invalid_argument") {
+          syncMode = "read-only";
+          setSyncNote("이 보기에서는 공유 저장 권한이 없어요 — 이 기기에만 저장됩니다.");
+        }
+      });
+    }, 500);
+  }
+
+  function initSync() {
+    if (typeof window.claude === "undefined" || !window.claude.use) {
+      setSyncNote("");
+      return;
+    }
+    window.claude.use("db").then(function (db) {
+      if (!db) { setSyncNote(""); return; }
+      dbDoc = db.doc(DOC_PATH);
+      window.claude.use("user").then(function (user) {
+        var canWrite = true;
+        if (user && typeof user.can === "function") {
+          user.can("data.write").then(function (v) { if (v === false) {
+            syncMode = "read-only";
+            setSyncNote("보기 전용으로 열려 있어요 — 변경한 내용은 이 기기에만 저장됩니다.");
+          }});
+        }
+      }).catch(function () {});
+
+      dbDoc.onSnapshot(function (snap) {
+        if (!snap.exists) {
+          // first viewer ever: seed the shared doc from current local state
+          dbDoc.set(state).catch(function () {});
+          syncMode = "shared";
+          setSyncNote("여러 기기·사람이 함께 편집할 수 있어요. 변경사항은 실시간으로 공유됩니다.");
+          return;
+        }
+        var remote = snap.data();
+        if (remote && Array.isArray(remote.days)) {
+          applyingRemote = true;
+          state = remote;
+          saveLocal();
+          renderLogistics();
+          renderTabs();
+          renderPanels();
+          applyingRemote = false;
+        }
+        syncMode = (syncMode === "read-only") ? "read-only" : "shared";
+        if (syncMode === "shared") {
+          setSyncNote("여러 기기·사람이 함께 편집할 수 있어요. 변경사항은 실시간으로 공유됩니다.");
+        }
+      }, function (err) {
+        setSyncNote("실시간 동기화 연결에 문제가 있어요 — 이 기기에만 저장됩니다.");
+      });
+    }).catch(function () { setSyncNote(""); });
+  }
+
+  var logiStrip = document.getElementById("logiStrip");
+  var dayTabs = document.getElementById("dayTabs");
+  var dayPanels = document.getElementById("dayPanels");
+
+  function renderLogistics() {
+    logiStrip.innerHTML = "";
+    state.logistics.forEach(function (item) {
+      var div = document.createElement("div");
+      div.className = "logi-item";
+      div.innerHTML =
+        '<div class="logi-label">' + escapeHtml(item.label) + '</div>' +
+        '<div class="logi-value">' + escapeHtml(item.value) +
+        (item.sub ? '<small>' + escapeHtml(item.sub) + '</small>' : '') +
+        '</div>';
+      logiStrip.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function renderTabs() {
+    dayTabs.innerHTML = "";
+    state.days.forEach(function (day, idx) {
+      var btn = document.createElement("button");
+      btn.className = "day-tab";
+      btn.type = "button";
+      btn.setAttribute("aria-selected", idx === activeDay ? "true" : "false");
+      var filled = day.entries.filter(function (e) { return e.time || e.title; }).length;
+      btn.innerHTML = escapeHtml(day.label) + " <span class='cnt'>" + escapeHtml(day.date) + "</span>";
+      btn.addEventListener("click", function () {
+        activeDay = idx;
+        renderTabs();
+        renderPanels();
+      });
+      dayTabs.appendChild(btn);
+    });
+  }
+
+  function autoGrow(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+  function renderPanels() {
+    dayPanels.innerHTML = "";
+    state.days.forEach(function (day, dIdx) {
+      var panel = document.createElement("div");
+      panel.className = "day-panel" + (dIdx === activeDay ? " active" : "");
+
+      var timeline = document.createElement("div");
+      timeline.className = "timeline";
+
+      if (day.entries.length === 0) {
+        var empty = document.createElement("div");
+        empty.className = "empty-note";
+        empty.textContent = "아직 비어있어요. 아래 버튼으로 일정을 추가해보세요.";
+        timeline.appendChild(empty);
+      }
+
+      day.entries.forEach(function (entry, eIdx) {
+        var row = document.createElement("div");
+        row.className = "entry";
+
+        var timeInput = document.createElement("input");
+        timeInput.className = "entry-time";
+        timeInput.type = "text";
+        timeInput.placeholder = "시간";
+        timeInput.value = entry.time || "";
+        timeInput.addEventListener("input", function () {
+          entry.time = timeInput.value;
+          scheduleWrite();
+        });
+
+        var body = document.createElement("div");
+        body.className = "entry-body";
+
+        var titleInput = document.createElement("input");
+        titleInput.className = "entry-title";
+        titleInput.type = "text";
+        titleInput.placeholder = "일정 제목";
+        titleInput.value = entry.title || "";
+        titleInput.addEventListener("input", function () {
+          entry.title = titleInput.value;
+          scheduleWrite();
+        });
+
+        var noteInput = document.createElement("textarea");
+        noteInput.className = "entry-note";
+        noteInput.rows = 1;
+        noteInput.placeholder = "메모 (선택)";
+        noteInput.value = entry.note || "";
+        noteInput.addEventListener("input", function () {
+          entry.note = noteInput.value;
+          scheduleWrite();
+          autoGrow(noteInput);
+        });
+
+        body.appendChild(titleInput);
+        body.appendChild(noteInput);
+
+        var delBtn = document.createElement("button");
+        delBtn.className = "entry-del";
+        delBtn.type = "button";
+        delBtn.innerHTML = "&times;";
+        delBtn.setAttribute("aria-label", "일정 삭제");
+        delBtn.addEventListener("click", function () {
+          day.entries.splice(eIdx, 1);
+          scheduleWrite();
+          renderPanels();
+          renderTabs();
+        });
+
+        row.appendChild(timeInput);
+        row.appendChild(body);
+        row.appendChild(delBtn);
+        timeline.appendChild(row);
+
+        requestAnimationFrame(function () { autoGrow(noteInput); });
+      });
+
+      panel.appendChild(timeline);
+
+      var addBtn = document.createElement("button");
+      addBtn.className = "add-row";
+      addBtn.type = "button";
+      addBtn.textContent = "+ 일정 추가";
+      addBtn.addEventListener("click", function () {
+        day.entries.push({ time: "", title: "", note: "" });
+        scheduleWrite();
+        renderPanels();
+        renderTabs();
+      });
+      panel.appendChild(addBtn);
+
+      dayPanels.appendChild(panel);
+    });
+  }
+
+  renderLogistics();
+  renderTabs();
+  renderPanels();
+  initSync();
+})();
+</script>
+
+</body>
+</html>
