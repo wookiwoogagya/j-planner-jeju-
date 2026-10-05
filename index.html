@@ -72,7 +72,7 @@
 
   header.hero {
     background: var(--basalt);
-    color: var(--stone);
+    color: #f4f0e6; /* 다크 모드에서도 제목이 보이도록 고정 */
     padding: env(safe-area-inset-top, 0px) 0 0;
     position: relative;
     overflow: hidden;
@@ -255,6 +255,108 @@
   }
 
 
+  /* ── 동기화 상태 줄 ── */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .sync-dot {
+    flex: 0 0 auto;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .sync-bar[data-state="ok"] .sync-dot { background: var(--oreum); }
+  .sync-bar[data-state="busy"] .sync-dot { background: var(--tangerine); }
+  .sync-bar[data-state="error"] .sync-dot { background: var(--danger); }
+  .sync-text { min-width: 0; }
+  .sync-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .sync-btn:hover { border-color: var(--tangerine); color: var(--tangerine-deep); }
+
+  dialog.sync-dialog {
+    width: min(460px, calc(100vw - 32px));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 22px 22px 18px;
+  }
+  dialog.sync-dialog::backdrop { background: rgba(15,14,11,0.55); }
+  .sync-dialog h2 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 19px;
+    margin: 0 0 8px;
+  }
+  .sync-dialog p { font-size: 13.5px; line-height: 1.6; color: var(--text-dim); margin: 0 0 14px; }
+  .sync-dialog label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; }
+  .sync-dialog input[type="url"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--stone);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .sync-dialog input[type="url"]:focus { outline: 2px solid var(--tangerine); outline-offset: 1px; }
+  .sync-msg { min-height: 20px; font-size: 13px; margin: 10px 0 4px; color: var(--text-dim); }
+  .sync-msg.err { color: var(--danger); }
+  .sync-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .sync-actions button {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .sync-actions button.primary {
+    background: var(--tangerine);
+    border-color: var(--tangerine);
+    color: #fff;
+  }
+  .sync-actions button.danger { color: var(--danger); }
+  .sync-actions .spacer { flex: 1 1 auto; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(20px);
+    max-width: calc(100vw - 40px);
+    background: var(--basalt);
+    color: #f4f0e6;
+    font-size: 13.5px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
   .cand-sub { font-size: 13px; color: var(--text-dim); margin: -6px 0 14px; line-height: 1.5; }
   .cand {
     background: var(--card-bg);
@@ -319,7 +421,11 @@
 
   <div class="logi-strip" id="logiStrip"></div>
 
-  <div id="syncNote" style="display:none; font-size:12.5px; color:var(--text-dim); margin:12px 2px 0; line-height:1.5;"></div>
+  <div class="sync-bar" id="syncBar" data-state="off">
+    <span class="sync-dot"></span>
+    <span class="sync-text" id="syncText">동기화 꺼짐 · 이 브라우저에만 저장</span>
+    <button class="sync-btn" id="syncOpen" type="button">동기화 설정</button>
+  </div>
 
   <div class="section-title">일정</div>
 
@@ -338,17 +444,34 @@
   <button class="add-row" type="button" id="addCand">+ 직접 입력해서 후보지 추가</button>
 
   <div class="footer-note">
-    확정된 항공편·렌터카·주차 일정만 기본으로 채워져 있어요. 나머지 칸은 직접 입력해서 채워가시면 됩니다.
+    확정된 항공편·렌터카·주차 일정만 기본으로 채워져 있어요. 나머지 칸은 직접 입력해서 채워가시면 됩니다.<br>
+    동기화를 연결하면 일정과 후보지가 다른 기기와 자동으로 맞춰져요. 연결하지 않으면 이 브라우저에만 저장됩니다.
   </div>
 
 </div>
+
+<dialog class="sync-dialog" id="syncDialog">
+  <h2>동기화 설정</h2>
+  <p>Google Apps Script 웹 앱 주소(…/exec 로 끝나는 주소)를 붙여넣으면, 같은 주소로 연결한 기기끼리 일정이 자동으로 맞춰져요.</p>
+  <label for="syncUrl">웹 앱 주소</label>
+  <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+  <div class="sync-msg" id="syncMsg"></div>
+  <div class="sync-actions">
+    <button type="button" class="primary" id="syncSave">저장하고 연결</button>
+    <button type="button" id="syncShare">공유 링크 복사</button>
+    <button type="button" class="danger" id="syncOff">연결 해제</button>
+    <span class="spacer"></span>
+    <button type="button" id="syncClose">닫기</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
   "use strict";
 
   var STORAGE_KEY = "jeju-jplanner-v1";
-  var DOC_PATH = "plan/jeju-2026-10";
 
   var defaultData = {
     logistics: [
@@ -421,85 +544,332 @@
   var state = loadLocal();
   var activeDay = 0;
 
-  // --- shared sync (db capability) -----------------------------------
-  var dbDoc = null;          // DocumentReference once resolved
-  var syncMode = "local";    // "local" | "shared" | "read-only"
-  var writeTimer = null;
-  var applyingRemote = false;
-
-  var syncNote = document.getElementById("syncNote");
-  function setSyncNote(text) {
-    if (!text) { syncNote.style.display = "none"; return; }
-    syncNote.textContent = text;
-    syncNote.style.display = "block";
-  }
-
-  function scheduleWrite() {
-    saveLocal();
-    if (!dbDoc || syncMode === "read-only") return;
-    clearTimeout(writeTimer);
-    writeTimer = setTimeout(function () {
-      dbDoc.set(state).catch(function (err) {
-        if (err && err.code === "invalid_argument") {
-          syncMode = "read-only";
-          setSyncNote("이 보기에서는 공유 저장 권한이 없어요 — 이 기기에만 저장됩니다.");
-        }
-      });
-    }, 500);
-  }
-
-  function initSync() {
-    if (typeof window.claude === "undefined" || !window.claude.use) {
-      setSyncNote("");
-      return;
-    }
-    window.claude.use("db").then(function (db) {
-      if (!db) { setSyncNote(""); return; }
-      dbDoc = db.doc(DOC_PATH);
-      window.claude.use("user").then(function (user) {
-        var canWrite = true;
-        if (user && typeof user.can === "function") {
-          user.can("data.write").then(function (v) { if (v === false) {
-            syncMode = "read-only";
-            setSyncNote("보기 전용으로 열려 있어요 — 변경한 내용은 이 기기에만 저장됩니다.");
-          }});
-        }
-      }).catch(function () {});
-
-      dbDoc.onSnapshot(function (snap) {
-        if (!snap.exists) {
-          // first viewer ever: seed the shared doc from current local state
-          dbDoc.set(state).catch(function () {});
-          syncMode = "shared";
-          setSyncNote("여러 기기·사람이 함께 편집할 수 있어요. 변경사항은 실시간으로 공유됩니다.");
-          return;
-        }
-        var remote = snap.data();
-        if (remote && Array.isArray(remote.days)) {
-          applyingRemote = true;
-          state = JSON.parse(JSON.stringify(remote));
-          var migrated = ensureShape(state);
-          saveLocal();
-          renderLogistics();
-          renderTabs();
-          renderPanels();
-          renderCandidates();
-          applyingRemote = false;
-          if (migrated) scheduleWrite();
-        }
-        syncMode = (syncMode === "read-only") ? "read-only" : "shared";
-        if (syncMode === "shared") {
-          setSyncNote("여러 기기·사람이 함께 편집할 수 있어요. 변경사항은 실시간으로 공유됩니다.");
-        }
-      }, function (err) {
-        setSyncNote("실시간 동기화 연결에 문제가 있어요 — 이 기기에만 저장됩니다.");
-      });
-    }).catch(function () { setSyncNote(""); });
-  }
-
   var logiStrip = document.getElementById("logiStrip");
   var dayTabs = document.getElementById("dayTabs");
   var dayPanels = document.getElementById("dayPanels");
+  var candList = document.getElementById("candList");
+  var pasteArea = document.getElementById("pasteArea");
+
+  /* ───────────── 동기화 ───────────── */
+
+  function isValidData(d) {
+    if (!d || !Array.isArray(d.days) || !Array.isArray(d.logistics)) return false;
+    return d.days.every(function (day) { return day && Array.isArray(day.entries); });
+  }
+
+  var SYNC_KEY = "jeju-jplanner-sync-v1";
+  // 주소를 파일에 직접 넣어두고 싶으면 여기에 적으세요. (저장소가 Public이면 주소도 공개됩니다)
+  var DEFAULT_SYNC_URL = "";
+  var POLL_MS = 10000;      // 다른 기기 변경 확인 주기
+  var PUSH_DELAY_MS = 1200; // 입력 후 저장까지 대기 시간
+
+  var sync = { url: "", rev: null, dirty: false, busy: false, again: false, pending: null, timer: null };
+
+  var syncBar = document.getElementById("syncBar");
+  var syncText = document.getElementById("syncText");
+  var syncDialog = document.getElementById("syncDialog");
+  var syncUrlInput = document.getElementById("syncUrl");
+  var syncMsg = document.getElementById("syncMsg");
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  function loadMeta() {
+    try {
+      var raw = localStorage.getItem(SYNC_KEY);
+      if (raw) {
+        var m = JSON.parse(raw);
+        if (m && typeof m.url === "string" && isValidUrl(m.url)) {
+          sync.url = m.url;
+          sync.rev = (typeof m.rev === "number") ? m.rev : null;
+          sync.dirty = !!m.dirty;
+          return;
+        }
+      }
+    } catch (e) { /* ignore */ }
+    if (isValidUrl(DEFAULT_SYNC_URL)) sync.url = DEFAULT_SYNC_URL;
+  }
+
+  function saveMeta() {
+    try {
+      localStorage.setItem(SYNC_KEY, JSON.stringify({ url: sync.url, rev: sync.rev, dirty: sync.dirty }));
+    } catch (e) { /* ignore */ }
+  }
+
+  // 구글 Apps Script 웹 앱 주소만 허용 (다른 서버로 일정이 전송되지 않도록)
+  function isValidUrl(u) {
+    return /^https:\/\/script\.google\.com\/(a\/macros\/[^\/]+|macros)\/s\/[\w-]+\/exec$/.test(String(u || ""));
+  }
+
+  function setStatus(kind, text) {
+    syncBar.setAttribute("data-state", kind);
+    syncText.textContent = text;
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function timeStr() {
+    var d = new Date();
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 3500);
+  }
+
+  function isEditing() {
+    var a = document.activeElement;
+    if (!a || (a.tagName !== "INPUT" && a.tagName !== "TEXTAREA" && a.tagName !== "SELECT")) return false;
+    return dayPanels.contains(a) || candList.contains(a) || a === pasteArea;
+  }
+
+  function apiGet(url) {
+    var q = "rev=" + (sync.rev === null ? "" : sync.rev) + "&t=" + Date.now();
+    return fetch(url + "?" + q).then(function (r) { return r.json(); });
+  }
+
+  function apiPost(url, body) {
+    // text/plain 으로 보내야 브라우저가 사전 요청(preflight) 없이 전송합니다.
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); });
+  }
+
+  // 서버 내용을 이 기기에 반영
+  function adopt(data, rev, force) {
+    if (!force && isEditing()) {
+      sync.pending = { data: data, rev: rev }; // 입력 중이면 입력이 끝난 뒤 반영
+      return;
+    }
+    state = data;
+    sync.rev = rev;
+    sync.dirty = false;
+    sync.pending = null;
+    var migrated = ensureShape(state); // 후보지 목록이 없는 예전 데이터 보정
+    if (activeDay >= state.days.length) activeDay = 0;
+    saveLocal();
+    saveMeta();
+    renderAll();
+    if (migrated) scheduleWrite();
+  }
+
+  function doPush(url) {
+    var sentAt = state.updatedAt;
+    setStatus("busy", "저장 중…");
+    return apiPost(url, { baseRev: sync.rev, data: state }).then(function (res) {
+      if (url !== sync.url) return;
+      if (res && res.ok) {
+        sync.rev = res.rev;
+        if (state.updatedAt === sentAt) sync.dirty = false;
+        else sync.again = true; // 보내는 사이 또 수정됨
+        saveMeta();
+        return;
+      }
+      if (res && res.conflict) {
+        if (isValidData(res.data)) {
+          adopt(res.data, res.rev, true);
+          toast("다른 기기에서 먼저 수정돼서 최신 내용으로 불러왔어요.");
+        } else {
+          sync.rev = res.rev; // 서버가 비어 있음 → 다시 올리기
+          sync.again = true;
+        }
+        return;
+      }
+      if (res && res.error === "too_large") {
+        toast("내용이 너무 길어 동기화하지 못했어요. 메모를 조금 줄여주세요.");
+      }
+      throw new Error((res && res.error) || "push failed");
+    });
+  }
+
+  function doPull(url) {
+    return apiGet(url).then(function (res) {
+      if (url !== sync.url) return;
+      if (!res || !res.ok) throw new Error("pull failed");
+      if (res.unchanged || res.rev === sync.rev) return;
+      if (sync.dirty) { sync.again = true; return; } // 내 수정부터 올리고 서버가 판단
+      if (isValidData(res.data)) {
+        adopt(res.data, res.rev, false);
+      } else {
+        sync.rev = res.rev; // 서버가 비워짐 → 내 내용으로 다시 채우기
+        sync.dirty = true;
+        sync.again = true;
+        saveMeta();
+      }
+    });
+  }
+
+  // 처음 연결: 서버에 내용이 있으면 그걸 받고, 비어 있으면 이 기기 내용을 올림
+  function doFirstSync(url) {
+    setStatus("busy", "연결 중…");
+    return apiGet(url).then(function (res) {
+      if (url !== sync.url) return;
+      if (!res || !res.ok) throw new Error("connect failed");
+      if (isValidData(res.data)) {
+        adopt(res.data, res.rev, true);
+        return;
+      }
+      sync.rev = res.rev;
+      saveMeta();
+      return doPush(url);
+    });
+  }
+
+  function syncNow() {
+    if (!sync.url) {
+      setStatus("off", "동기화 꺼짐 · 이 브라우저에만 저장");
+      return;
+    }
+    if (sync.busy) { sync.again = true; return; }
+    sync.busy = true;
+    var url = sync.url;
+    var job;
+    if (sync.rev === null) job = doFirstSync(url);
+    else if (sync.dirty) job = doPush(url);
+    else job = doPull(url);
+
+    job.then(function () {
+      if (url !== sync.url) return;
+      setStatus("ok", "동기화됨 · " + timeStr());
+    }).catch(function () {
+      if (url !== sync.url) return;
+      sync.again = false; // 실패 시엔 다음 주기에 자동 재시도
+      setStatus("error", "연결 안 됨 · 자동으로 다시 시도해요");
+    }).then(function () {
+      sync.busy = false;
+      if (sync.again) {
+        sync.again = false;
+        setTimeout(syncNow, 300);
+      }
+    });
+  }
+
+  function schedulePush() {
+    if (!sync.url) return;
+    clearTimeout(sync.timer);
+    sync.timer = setTimeout(syncNow, PUSH_DELAY_MS);
+  }
+
+  // 사용자가 내용을 바꿀 때마다 호출
+  function scheduleWrite() {
+    state.updatedAt = Date.now();
+    saveLocal();
+    if (sync.url) {
+      sync.dirty = true;
+      saveMeta();
+      schedulePush();
+    }
+  }
+
+  function connect(url) {
+    sync.url = url;
+    sync.rev = null;
+    sync.dirty = false;
+    sync.pending = null;
+    saveMeta();
+    syncNow();
+  }
+
+  function disconnect() {
+    clearTimeout(sync.timer);
+    sync.url = "";
+    sync.rev = null;
+    sync.dirty = false;
+    sync.pending = null;
+    saveMeta();
+    setStatus("off", "동기화 꺼짐 · 이 브라우저에만 저장");
+  }
+
+  function showMsg(text, isErr) {
+    syncMsg.textContent = text || "";
+    syncMsg.className = "sync-msg" + (isErr ? " err" : "");
+  }
+
+  function shareLink() {
+    return location.origin + location.pathname + "#sync=" + encodeURIComponent(sync.url);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (ok) resolve(); else reject(new Error("copy failed"));
+    });
+  }
+
+  document.getElementById("syncOpen").addEventListener("click", function () {
+    syncUrlInput.value = sync.url;
+    showMsg(sync.url ? "현재 연결되어 있어요." : "");
+    if (typeof syncDialog.showModal === "function") syncDialog.showModal();
+    else syncDialog.setAttribute("open", "");
+  });
+
+  document.getElementById("syncClose").addEventListener("click", function () {
+    syncDialog.close();
+  });
+
+  document.getElementById("syncSave").addEventListener("click", function () {
+    var u = syncUrlInput.value.trim();
+    if (!isValidUrl(u)) {
+      showMsg("주소 형식이 맞지 않아요. https://script.google.com/macros/s/…/exec 형태여야 해요.", true);
+      return;
+    }
+    if (u !== sync.url) connect(u); else syncNow();
+    showMsg("연결했어요. 다른 기기에는 '공유 링크 복사'로 보내면 돼요.");
+  });
+
+  document.getElementById("syncShare").addEventListener("click", function () {
+    if (!sync.url) { showMsg("먼저 주소를 저장하고 연결해주세요.", true); return; }
+    copyText(shareLink()).then(function () {
+      showMsg("공유 링크를 복사했어요. 이 링크로 열면 자동으로 연결돼요.");
+    }).catch(function () {
+      showMsg("복사하지 못했어요. 주소창 주소 뒤에 #sync=웹앱주소 를 붙여 보내주세요.", true);
+    });
+  });
+
+  document.getElementById("syncOff").addEventListener("click", function () {
+    disconnect();
+    syncUrlInput.value = "";
+    showMsg("연결을 해제했어요. 이제 이 브라우저에만 저장돼요.");
+  });
+
+  // 입력이 끝나면 미뤄둔 서버 변경을 반영
+  document.addEventListener("focusout", function () {
+    setTimeout(function () {
+      if (!sync.pending || isEditing()) return;
+      if (sync.dirty) { sync.pending = null; syncNow(); }
+      else adopt(sync.pending.data, sync.pending.rev, true);
+    }, 150);
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) syncNow();
+  });
+  window.addEventListener("online", syncNow);
+  setInterval(function () {
+    if (sync.url && !document.hidden) syncNow();
+  }, POLL_MS);
+
+  function renderAll() {
+    renderLogistics();
+    renderTabs();
+    renderPanels();
+    renderCandidates();
+  }
+
 
   function renderLogistics() {
     logiStrip.innerHTML = "";
@@ -545,7 +915,6 @@
   }
 
 
-  var candList = document.getElementById("candList");
   function renderCandidates() {
     candList.innerHTML = "";
     state.candidates.forEach(function (c, i) {
@@ -621,7 +990,6 @@
     });
     return out;
   }
-  var pasteArea = document.getElementById("pasteArea");
   var pasteMsg = document.getElementById("pasteMsg");
   function addFromPaste() {
     var items = parseShared(pasteArea.value);
@@ -751,7 +1119,29 @@
   renderTabs();
   renderPanels();
   renderCandidates();
-  initSync();
+  loadMeta();
+
+  // 공유 링크(#sync=주소)로 들어온 경우 자동 연결
+  (function readShareLink() {
+    var m = location.hash.match(/[#&]sync=([^&]+)/);
+    if (!m) return;
+    var u = "";
+    try { u = decodeURIComponent(m[1]); } catch (e) { u = ""; }
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+    if (!isValidUrl(u) || u === sync.url) return;
+    var ok = window.confirm(
+      "공유 받은 동기화 주소로 연결할까요?\n" +
+      "연결하면 이 브라우저의 일정이 공유 중인 일정으로 바뀝니다."
+    );
+    if (ok) {
+      sync.url = u;
+      sync.rev = null;
+      sync.dirty = false;
+      saveMeta();
+    }
+  })();
+
+  syncNow();
 })();
 </script>
 
