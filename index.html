@@ -443,6 +443,12 @@
     background: var(--tangerine); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
   }
   .search-row button:disabled { opacity: .6; cursor: default; }
+  .search-row button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text-dim); padding: 0 14px; }
+  .search-row button.ghost:hover { border-color: var(--danger); color: var(--danger); }
+  .search-row button[hidden] { display: none; }
+  .sr-btns { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .sr-add.fill { background: var(--tangerine); color: #fff; }
+  .sr-add.fill:disabled { background: transparent; }
   .search-msg { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
   .search-msg.err { color: var(--danger); }
   .search-results { margin-top: 8px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card-bg); }
@@ -524,6 +530,7 @@
     <div class="search-row">
       <input type="search" id="searchInput" placeholder="장소 검색 (예: 제주 구좌읍 카페)" autocomplete="off" enterkeyhint="search">
       <button type="button" id="searchBtn">검색</button>
+      <button type="button" id="searchClear" class="ghost" hidden>지우기</button>
     </div>
     <div id="searchMsg" class="search-msg"></div>
     <div id="searchResults" class="search-results"></div>
@@ -696,6 +703,7 @@
   function setStatus(kind, text) {
     syncBar.setAttribute("data-state", kind);
     syncText.textContent = text;
+    if (kind === "off" && typeof updateMap === "function") { try { updateMap(); } catch (e) { /* 지도 준비 전 */ } }
   }
 
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -1335,7 +1343,8 @@
     }
 
     if (mapMsg) {
-      mapMsg.textContent = missing ? "위치를 찾지 못한 일정이 " + missing + "곳 있어요. 후보지 검색으로 추가하면 정확히 표시돼요." : "";
+      if (!sync.url) mapMsg.textContent = "이 기기는 동기화가 연결되지 않아 일정 위치를 표시할 수 없어요. 위쪽 '동기화 설정'에서 연결하거나, 연결된 기기에서 '공유 링크 복사'로 받은 링크로 열어주세요.";
+      else mapMsg.textContent = missing ? "위치를 찾지 못한 일정이 " + missing + "곳 있어요. 후보지 검색으로 추가하면 정확히 표시돼요." : "";
     }
     scheduleGeo(600);
   }
@@ -1445,6 +1454,7 @@
   var searchBtn = document.getElementById("searchBtn");
   var searchMsg = document.getElementById("searchMsg");
   var searchResults = document.getElementById("searchResults");
+  var searchClear = document.getElementById("searchClear");
 
   function setSearchMsg(text, isErr) {
     searchMsg.textContent = text || "";
@@ -1473,6 +1483,7 @@
       badge.className = "sr-badge" + (located ? "" : " none");
       badge.textContent = located ? String.fromCharCode(65 + idx) : "–";
       row.appendChild(badge);
+      searchClear.hidden = false;
 
       var info = document.createElement("div");
       info.className = "sr-info";
@@ -1509,8 +1520,32 @@
         btn.disabled = true;
       });
 
+      // 지금 선택된 Day의 일정에 바로 추가
+      var dayBtn = document.createElement("button");
+      dayBtn.type = "button";
+      dayBtn.className = "sr-add fill";
+      dayBtn.textContent = "일정에 추가";
+      dayBtn.addEventListener("click", function () {
+        var day = state.days[activeDay];
+        if (!day) return;
+        var ne = { time: "", title: item.name, note: item.addr || "" };
+        if (located) { ne.lat = item.lat; ne.lng = item.lng; }
+        day.entries.push(ne);
+        scheduleWrite();
+        renderTabs();
+        renderPanels();
+        toast(day.label + " " + day.date + " 일정에 추가했어요.");
+        dayBtn.textContent = "추가됨 ✓";
+        setTimeout(function () { dayBtn.textContent = "일정에 추가"; }, 1500);
+      });
+
+      var btns = document.createElement("div");
+      btns.className = "sr-btns";
+      btns.appendChild(dayBtn);
+      btns.appendChild(btn);
+
       row.appendChild(info);
-      row.appendChild(btn);
+      row.appendChild(btns);
       searchResults.appendChild(row);
     });
     updateMap(true);
@@ -1528,14 +1563,25 @@
       renderSearchResults(res.items);
       if (!res.items.length) setSearchMsg("검색 결과가 없어요. 지역 이름을 함께 넣어보세요.");
       else if (!(res.v >= 4)) setSearchMsg("지도에 위치를 표시하려면 새 Code.gs를 새 버전으로 배포해주세요.", true);
-      else setSearchMsg("결과를 누르면 지도에서 위치를 볼 수 있어요.");
+      else setSearchMsg("결과를 누르면 지도에서 위치를 볼 수 있어요. '일정에 추가'는 위에서 선택한 Day에 들어갑니다.");
     }).catch(function (err) {
       searchResults.innerHTML = "";
       searchItems = [];
+      searchClear.hidden = true;
       updateMap();
       setSearchMsg(String((err && err.message) || err), true);
     }).then(function () { searchBtn.disabled = false; });
   }
+
+  function clearSearch() {
+    searchItems = [];
+    searchResults.innerHTML = "";
+    searchInput.value = "";
+    searchClear.hidden = true;
+    setSearchMsg("");
+    updateMap(true);
+  }
+  searchClear.addEventListener("click", clearSearch);
 
   searchBtn.addEventListener("click", runSearch);
   searchInput.addEventListener("keydown", function (e) {
