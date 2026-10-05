@@ -254,6 +254,50 @@
     padding-top: 16px;
   }
 
+
+  .cand-sub { font-size: 13px; color: var(--text-dim); margin: -6px 0 14px; line-height: 1.5; }
+  .cand {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .cand-head { display: flex; gap: 8px; align-items: center; }
+  .cand input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .cand .c-name { font-size: 16px; font-weight: 700; padding: 2px 0; }
+  .cand .c-addr { font-size: 13px; color: var(--text-dim); padding: 2px 0; }
+  .cand .c-link { font-size: 12px; color: var(--text-dim); padding: 2px 0; }
+  .cand input::placeholder { color: var(--line); }
+  .cand-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .cand-actions select, .cand-actions a, .cand-actions button {
+    font-family: inherit; font-size: 13px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--stone); color: var(--text);
+    padding: 7px 13px; cursor: pointer; text-decoration: none;
+  }
+  .cand-actions button.go { background: var(--tangerine); border-color: var(--tangerine); color: #fff; font-weight: 500; }
+  .cand-actions a.map { color: var(--ocean); }
+
+
+  .paste-box { margin-top: 14px; }
+  .paste-box textarea {
+    width: 100%; resize: vertical; border: 1.5px dashed var(--line); border-radius: 12px;
+    background: var(--card-bg); color: var(--text); font-family: inherit; font-size: 14px;
+    padding: 12px; line-height: 1.5;
+  }
+  .paste-box textarea::placeholder { color: var(--text-dim); }
+  .paste-box button {
+    margin-top: 8px; padding: 9px 16px; border-radius: 999px; border: none;
+    background: var(--tangerine); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .paste-msg { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
   @media (max-width: 420px) {
     .logi-strip { grid-template-columns: 1fr; }
     .entry { grid-template-columns: 52px 1fr auto; }
@@ -283,6 +327,16 @@
 
   <div id="dayPanels"></div>
 
+  <div class="section-title">후보지</div>
+  <p class="cand-sub">가고 싶은 곳을 모아두는 목록이에요. 날짜를 골라 "일정에 추가"를 누르면 해당 날짜 일정에 들어갑니다.</p>
+  <div id="candList"></div>
+  <div class="paste-box">
+    <textarea id="pasteArea" rows="3" placeholder="네이버지도 공유 내용을 붙여넣으면 후보지로 추가돼요 (여러 곳을 한꺼번에 붙여넣어도 됩니다)"></textarea>
+    <button type="button" id="pasteBtn">후보지로 추가</button>
+    <div id="pasteMsg" class="paste-msg"></div>
+  </div>
+  <button class="add-row" type="button" id="addCand">+ 직접 입력해서 후보지 추가</button>
+
   <div class="footer-note">
     확정된 항공편·렌터카·주차 일정만 기본으로 채워져 있어요. 나머지 칸은 직접 입력해서 채워가시면 됩니다.
   </div>
@@ -303,6 +357,15 @@
       { label: "김포공항 주차", value: "국내선 제2주차장 2·3층", sub: "입차 10/7 10:00 · 출차 10/10 16:00" },
       { label: "렌터카", value: "더뉴 레이(고급형) · 슈퍼자차", sub: "인수 10/7 14:00 · 반납 10/10 12:30까지" },
       { label: "숙소", value: "사계절송당 (1·2·3호)", sub: "제주시 중산간동로 2042-8 · 3박" }
+    ],
+    candidates: [
+      { name: "보롬창고", addr: "제주 제주시 구좌읍 종달항길 3", link: "https://naver.me/xQJlVaLe" },
+      { name: "모어모어", addr: "제주 제주시 구좌읍 해맞이해안로 1616 지하1층, 1층", link: "https://naver.me/5t7rZj4E" },
+      { name: "김녕빗소리", addr: "제주 제주시 구좌읍 김녕로 151 1층", link: "https://naver.me/FUiypq23" },
+      { name: "도우보이", addr: "제주 제주시 구좌읍 비자림로 2136 1층", link: "https://naver.me/F7FAsw0W" },
+      { name: "비수기애호가", addr: "제주 제주시 구좌읍 해맞이해안로 997 2층", link: "https://naver.me/FZoItTMc" },
+      { name: "돌담통닭 본점", addr: "제주 제주시 구좌읍 세평항로 47 1층", link: "https://naver.me/58qTGx89" },
+      { name: "킨조베이커리", addr: "제주 제주시 구좌읍 비자림로 1814 1층", link: "https://naver.me/FYrPUJPd" }
     ],
     days: [
       {
@@ -330,12 +393,20 @@
     ]
   };
 
+  function ensureShape(o) {
+    if (o && !Array.isArray(o.candidates)) {
+      o.candidates = JSON.parse(JSON.stringify(defaultData.candidates));
+      return true;
+    }
+    return false;
+  }
+
   function loadLocal() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.days)) return parsed;
+        if (parsed && Array.isArray(parsed.days)) { ensureShape(parsed); return parsed; }
       }
     } catch (e) { /* ignore, fall back to default */ }
     return JSON.parse(JSON.stringify(defaultData));
@@ -406,12 +477,15 @@
         var remote = snap.data();
         if (remote && Array.isArray(remote.days)) {
           applyingRemote = true;
-          state = remote;
+          state = JSON.parse(JSON.stringify(remote));
+          var migrated = ensureShape(state);
           saveLocal();
           renderLogistics();
           renderTabs();
           renderPanels();
+          renderCandidates();
           applyingRemote = false;
+          if (migrated) scheduleWrite();
         }
         syncMode = (syncMode === "read-only") ? "read-only" : "shared";
         if (syncMode === "shared") {
@@ -469,6 +543,114 @@
     el.style.height = "auto";
     el.style.height = el.scrollHeight + "px";
   }
+
+
+  var candList = document.getElementById("candList");
+  function renderCandidates() {
+    candList.innerHTML = "";
+    state.candidates.forEach(function (c, i) {
+      var box = document.createElement("div");
+      box.className = "cand";
+
+      var head = document.createElement("div");
+      head.className = "cand-head";
+      var name = document.createElement("input");
+      name.className = "c-name"; name.type = "text"; name.placeholder = "장소 이름"; name.value = c.name || "";
+      name.addEventListener("input", function () { c.name = name.value; scheduleWrite(); });
+      var del = document.createElement("button");
+      del.className = "entry-del"; del.type = "button"; del.innerHTML = "&times;";
+      del.setAttribute("aria-label", "후보지 삭제");
+      del.addEventListener("click", function () {
+        state.candidates.splice(i, 1); scheduleWrite(); renderCandidates();
+      });
+      head.appendChild(name); head.appendChild(del);
+
+      var addr = document.createElement("input");
+      addr.className = "c-addr"; addr.type = "text"; addr.placeholder = "주소"; addr.value = c.addr || "";
+      addr.addEventListener("input", function () { c.addr = addr.value; scheduleWrite(); });
+
+      var link = document.createElement("input");
+      link.className = "c-link"; link.type = "text"; link.placeholder = "지도 링크"; link.value = c.link || "";
+      link.addEventListener("input", function () { c.link = link.value; scheduleWrite(); });
+
+      var actions = document.createElement("div");
+      actions.className = "cand-actions";
+      var sel = document.createElement("select");
+      state.days.forEach(function (d, di) {
+        var o = document.createElement("option");
+        o.value = di; o.textContent = d.label + " " + d.date;
+        sel.appendChild(o);
+      });
+      var go = document.createElement("button");
+      go.className = "go"; go.type = "button"; go.textContent = "일정에 추가";
+      go.addEventListener("click", function () {
+        var day = state.days[parseInt(sel.value, 10)];
+        day.entries.push({ time: "", title: c.name || "", note: c.addr || "" });
+        scheduleWrite();
+        renderTabs(); renderPanels();
+        go.textContent = "추가됨 ✓";
+        setTimeout(function () { go.textContent = "일정에 추가"; }, 1500);
+      });
+      actions.appendChild(sel); actions.appendChild(go);
+      if (c.link && /^https?:\/\//.test(c.link)) {
+        var a = document.createElement("a");
+        a.className = "map"; a.href = c.link; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "지도 열기";
+        actions.appendChild(a);
+      }
+
+      box.appendChild(head); box.appendChild(addr); box.appendChild(link); box.appendChild(actions);
+      candList.appendChild(box);
+    });
+  }
+
+  function parseShared(text) {
+    var lines = String(text || "").split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var out = [], buf = [];
+    lines.forEach(function (line) {
+      var m = line.match(/https?:\/\/\S+/);
+      if (m) {
+        var before = line.replace(m[0], "").trim();
+        if (before) buf.push(before);
+        buf = buf.filter(function (l) { return !/^\[?네이버\s*지도\]?$/.test(l); });
+        out.push({ name: buf[0] || "", addr: buf[1] || "", link: m[0] });
+        buf = [];
+      } else {
+        buf.push(line);
+      }
+    });
+    return out;
+  }
+  var pasteArea = document.getElementById("pasteArea");
+  var pasteMsg = document.getElementById("pasteMsg");
+  function addFromPaste() {
+    var items = parseShared(pasteArea.value);
+    if (!items.length) {
+      pasteMsg.textContent = "링크를 찾지 못했어요. 네이버지도 '공유'로 복사한 내용을 그대로 붙여넣어 주세요.";
+      return;
+    }
+    var added = 0, dup = 0, noName = 0;
+    items.forEach(function (it) {
+      var exists = state.candidates.some(function (c) { return c.link && c.link === it.link; });
+      if (exists) { dup++; return; }
+      if (!it.name) noName++;
+      state.candidates.push(it);
+      added++;
+    });
+    if (added) { scheduleWrite(); renderCandidates(); }
+    pasteArea.value = "";
+    var msg = added + "곳을 추가했어요.";
+    if (dup) msg += " (이미 있는 " + dup + "곳은 건너뜀)";
+    if (noName) msg += " 링크만 붙여넣은 " + noName + "곳은 이름과 주소를 직접 입력해주세요.";
+    pasteMsg.textContent = msg;
+  }
+  document.getElementById("pasteBtn").addEventListener("click", addFromPaste);
+  pasteArea.addEventListener("paste", function () { setTimeout(addFromPaste, 0); });
+
+  document.getElementById("addCand").addEventListener("click", function () {
+    state.candidates.push({ name: "", addr: "", link: "" });
+    scheduleWrite(); renderCandidates();
+  });
 
   function renderPanels() {
     dayPanels.innerHTML = "";
@@ -568,6 +750,7 @@
   renderLogistics();
   renderTabs();
   renderPanels();
+  renderCandidates();
   initSync();
 })();
 </script>
