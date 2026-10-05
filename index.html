@@ -625,14 +625,19 @@
   }
 
   function apiGet(url) {
-    var q = "rev=" + (sync.rev === null ? "" : sync.rev) + "&t=" + Date.now();
-    return fetch(url + "?" + q).then(function (r) { return r.json(); });
+    var q = "t=" + Date.now();
+    if (sync.rev !== null) q = "rev=" + sync.rev + "&" + q;
+    // credentials:"omit" — 브라우저에 로그인된 구글 계정 정보가 섞여 들어가지 않게 함
+    return fetch(url + "?" + q, { method: "GET", credentials: "omit", redirect: "follow", cache: "no-store" })
+      .then(function (r) { return r.json(); });
   }
 
   function apiPost(url, body) {
     // text/plain 으로 보내야 브라우저가 사전 요청(preflight) 없이 전송합니다.
     return fetch(url, {
       method: "POST",
+      credentials: "omit",
+      redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(body)
     }).then(function (r) { return r.json(); });
@@ -734,8 +739,9 @@
     job.then(function () {
       if (url !== sync.url) return;
       setStatus("ok", "동기화됨 · " + timeStr());
-    }).catch(function () {
+    }).catch(function (err) {
       if (url !== sync.url) return;
+      sync.lastError = String((err && err.message) || err);
       sync.again = false; // 실패 시엔 다음 주기에 자동 재시도
       setStatus("error", "연결 안 됨 · 자동으로 다시 시도해요");
     }).then(function () {
@@ -812,7 +818,11 @@
 
   document.getElementById("syncOpen").addEventListener("click", function () {
     syncUrlInput.value = sync.url;
-    showMsg(sync.url ? "현재 연결되어 있어요." : "");
+    if (sync.url && syncBar.getAttribute("data-state") === "error") {
+      showMsg("연결 실패: " + (sync.lastError || "알 수 없는 오류"), true);
+    } else {
+      showMsg(sync.url ? "현재 연결되어 있어요." : "");
+    }
     if (typeof syncDialog.showModal === "function") syncDialog.showModal();
     else syncDialog.setAttribute("open", "");
   });
