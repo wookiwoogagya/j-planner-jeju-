@@ -387,6 +387,37 @@
   .cand-actions a.map { color: var(--ocean); }
 
 
+  /* ── 장소 검색 ── */
+  .search-box { margin: 0 0 16px; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--card-bg); color: var(--text); font-family: inherit; font-size: 14.5px;
+    padding: 11px 16px;
+  }
+  .search-row input:focus { outline: 2px solid var(--tangerine); outline-offset: 1px; }
+  .search-row input::placeholder { color: var(--text-dim); }
+  .search-row button {
+    flex: 0 0 auto; padding: 0 18px; border-radius: 999px; border: none;
+    background: var(--tangerine); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .search-row button:disabled { opacity: .6; cursor: default; }
+  .search-msg { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+  .search-msg.err { color: var(--danger); }
+  .search-results { margin-top: 8px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card-bg); }
+  .search-results:empty { display: none; }
+  .sr-item { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .sr-item:last-child { border-bottom: none; }
+  .sr-info { flex: 1 1 auto; min-width: 0; }
+  .sr-name { font-size: 15px; font-weight: 500; }
+  .sr-cat { font-size: 12px; color: var(--ocean); margin-left: 6px; font-weight: 400; }
+  .sr-addr { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; }
+  .sr-add {
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--tangerine);
+    background: transparent; color: var(--tangerine-deep); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .sr-add:disabled { border-color: var(--line); color: var(--text-dim); cursor: default; }
+
   .paste-box { margin-top: 14px; }
   .paste-box textarea {
     width: 100%; resize: vertical; border: 1.5px dashed var(--line); border-radius: 12px;
@@ -434,7 +465,15 @@
   <div id="dayPanels"></div>
 
   <div class="section-title">후보지</div>
-  <p class="cand-sub">가고 싶은 곳을 모아두는 목록이에요. 날짜를 골라 "일정에 추가"를 누르면 해당 날짜 일정에 들어갑니다.</p>
+  <p class="cand-sub">가고 싶은 곳을 검색해서 모아두는 목록이에요. 날짜를 골라 "일정에 추가"를 누르면 해당 날짜 일정에 들어갑니다.</p>
+  <div class="search-box">
+    <div class="search-row">
+      <input type="search" id="searchInput" placeholder="장소 검색 (예: 제주 구좌읍 카페)" autocomplete="off" enterkeyhint="search">
+      <button type="button" id="searchBtn">검색</button>
+    </div>
+    <div id="searchMsg" class="search-msg"></div>
+    <div id="searchResults" class="search-results"></div>
+  </div>
   <div id="candList"></div>
   <div class="paste-box">
     <textarea id="pasteArea" rows="3" placeholder="네이버지도 공유 내용을 붙여넣으면 후보지로 추가돼요 (여러 곳을 한꺼번에 붙여넣어도 됩니다)"></textarea>
@@ -649,7 +688,7 @@
 
   function apiGet(url) {
     return jsonp(url, sync.rev === null ? "" : "rev=" + sync.rev).then(function (res) {
-      if (res && res.ok && res.v !== 2) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
+      if (res && res.ok && !(res.v >= 2)) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
       return res;
     });
   }
@@ -1060,6 +1099,92 @@
   }
   document.getElementById("pasteBtn").addEventListener("click", addFromPaste);
   pasteArea.addEventListener("paste", function () { setTimeout(addFromPaste, 0); });
+
+  /* ───────────── 장소 검색 ───────────── */
+  var searchInput = document.getElementById("searchInput");
+  var searchBtn = document.getElementById("searchBtn");
+  var searchMsg = document.getElementById("searchMsg");
+  var searchResults = document.getElementById("searchResults");
+
+  function setSearchMsg(text, isErr) {
+    searchMsg.textContent = text || "";
+    searchMsg.className = "search-msg" + (isErr ? " err" : "");
+  }
+
+  function mapLink(item) {
+    // 이름 + 시/군 으로 네이버지도 검색 화면을 엽니다.
+    var region = String(item.addr || "").split(/\s+/)[1] || "";
+    return "https://map.naver.com/p/search/" + encodeURIComponent((item.name + " " + region).trim());
+  }
+
+  function hasCandidate(item) {
+    return state.candidates.some(function (c) { return c.name === item.name && c.addr === item.addr; });
+  }
+
+  function renderSearchResults(items) {
+    searchResults.innerHTML = "";
+    items.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "sr-item";
+
+      var info = document.createElement("div");
+      info.className = "sr-info";
+      var name = document.createElement("div");
+      name.className = "sr-name";
+      name.textContent = item.name;
+      if (item.category) {
+        var cat = document.createElement("span");
+        cat.className = "sr-cat";
+        cat.textContent = item.category.split(">").pop().trim();
+        name.appendChild(cat);
+      }
+      var addr = document.createElement("div");
+      addr.className = "sr-addr";
+      addr.textContent = item.addr;
+      info.appendChild(name);
+      info.appendChild(addr);
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sr-add";
+      if (hasCandidate(item)) { btn.textContent = "추가됨"; btn.disabled = true; }
+      else btn.textContent = "후보지에 추가";
+      btn.addEventListener("click", function () {
+        if (hasCandidate(item)) return;
+        state.candidates.push({ name: item.name, addr: item.addr, link: mapLink(item) });
+        scheduleWrite();
+        renderCandidates();
+        btn.textContent = "추가됨";
+        btn.disabled = true;
+      });
+
+      row.appendChild(info);
+      row.appendChild(btn);
+      searchResults.appendChild(row);
+    });
+  }
+
+  function runSearch() {
+    var q = searchInput.value.trim();
+    if (!q) { setSearchMsg("검색어를 입력해주세요.", true); return; }
+    if (!sync.url) { setSearchMsg("검색은 동기화를 연결한 뒤에 쓸 수 있어요. (동기화 설정)", true); return; }
+    searchBtn.disabled = true;
+    setSearchMsg("검색 중…");
+    jsonp(sync.url, "op=search&q=" + encodeURIComponent(q)).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || "검색에 실패했어요");
+      if (!Array.isArray(res.items)) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
+      renderSearchResults(res.items);
+      setSearchMsg(res.items.length ? "" : "검색 결과가 없어요. 지역 이름을 함께 넣어보세요.");
+    }).catch(function (err) {
+      searchResults.innerHTML = "";
+      setSearchMsg(String((err && err.message) || err), true);
+    }).then(function () { searchBtn.disabled = false; });
+  }
+
+  searchBtn.addEventListener("click", runSearch);
+  searchInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); runSearch(); }
+  });
 
   document.getElementById("addCand").addEventListener("click", function () {
     state.candidates.push({ name: "", addr: "", link: "" });
