@@ -624,23 +624,59 @@
     return dayPanels.contains(a) || candList.contains(a) || a === pasteArea;
   }
 
-  function apiGet(url) {
-    var q = "t=" + Date.now();
-    if (sync.rev !== null) q = "rev=" + sync.rev + "&" + q;
-    // credentials:"omit" — 브라우저에 로그인된 구글 계정 정보가 섞여 들어가지 않게 함
-    return fetch(url + "?" + q, { method: "GET", credentials: "omit", redirect: "follow", cache: "no-store" })
-      .then(function (r) { return r.json(); });
+  // 읽기는 JSONP(<script> 태그) 방식 — 주소창에서 여는 것과 같은 요청이라 CORS 차단을 받지 않습니다.
+  var jsonpSeq = 0;
+  function jsonp(url, params) {
+    return new Promise(function (resolve, reject) {
+      var name = "__jplanner_cb_" + Date.now() + "_" + (jsonpSeq++);
+      var el = document.createElement("script");
+      var done = false;
+      function finish(fn, arg) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try { delete window[name]; } catch (e) { window[name] = undefined; }
+        if (el.parentNode) el.parentNode.removeChild(el);
+        fn(arg);
+      }
+      var timer = setTimeout(function () { finish(reject, new Error("응답 시간 초과")); }, 25000);
+      window[name] = function (res) { finish(resolve, res); };
+      el.onerror = function () { finish(reject, new Error("서버에 접속하지 못했어요")); };
+      el.src = url + "?callback=" + name + (params ? "&" + params : "") + "&t=" + Date.now();
+      document.head.appendChild(el);
+    });
   }
 
+  function apiGet(url) {
+    return jsonp(url, sync.rev === null ? "" : "rev=" + sync.rev).then(function (res) {
+      if (res && res.ok && res.v !== 2) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
+      return res;
+    });
+  }
+
+  // 쓰기는 응답을 읽지 않는 방식(no-cors)으로 보내고, 곧바로 다시 읽어서 저장됐는지 확인합니다.
   function apiPost(url, body) {
-    // text/plain 으로 보내야 브라우저가 사전 요청(preflight) 없이 전송합니다.
+    body.writeId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    var raw = JSON.stringify(body);
+    if (raw.length > 44000) {
+      toast("내용이 너무 길어 동기화하지 못했어요. 메모를 조금 줄여주세요.");
+      return Promise.reject(new Error("내용이 너무 깁니다"));
+    }
     return fetch(url, {
       method: "POST",
+      mode: "no-cors",
       credentials: "omit",
       redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(body)
-    }).then(function (r) { return r.json(); });
+      body: raw
+    }).then(function () {
+      return jsonp(url, "");
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error("저장 확인 실패");
+      if (r.writeId === body.writeId) return { ok: true, rev: r.rev };
+      if (r.rev !== body.baseRev) return { ok: false, conflict: true, rev: r.rev, data: r.data };
+      return { ok: false, error: "저장되지 않았어요" };
+    });
   }
 
   // 서버 내용을 이 기기에 반영
