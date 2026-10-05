@@ -403,6 +403,14 @@
     color: #fff; font: 700 12px/1 'Noto Sans KR', sans-serif;
   }
   .mk.day { background: #e2762c; } .mk.cand { background: #2d5d72; } .mk.srch { background: #3f8f52; } .mk.home { background: #26241f; }
+  .leaflet-tooltip.mk-label {
+    background: rgba(255,253,248,.95); color: #26241f; border: 1px solid #d9d0ba; border-radius: 8px;
+    padding: 2px 7px; font: 500 12px/1.4 'Noto Sans KR', sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .leaflet-tooltip.mk-label::before { display: none; }
+  .leaflet-tooltip.mk-label.day { border-color: #e2762c; }
+  .leaflet-tooltip.mk-label.srch { border-color: #3f8f52; }
   .leaflet-popup-content { font-family: 'Noto Sans KR', sans-serif; font-size: 13px; line-height: 1.45; margin: 10px 14px; }
   .pp-name { font-weight: 700; color: #26241f; }
   .pp-addr { color: #716b5c; font-size: 12px; margin-top: 2px; }
@@ -497,7 +505,6 @@
     <div class="map-wrap"><div id="map"></div></div>
     <div class="map-legend">
       <span><i class="lg day"></i>선택한 날 일정 (번호 = 순서)</span>
-      <span><i class="lg cand"></i>후보지</span>
       <span><i class="lg srch"></i>검색 결과</span>
       <span><i class="lg home"></i>숙소</span>
     </div>
@@ -1051,7 +1058,7 @@
       head.className = "cand-head";
       var name = document.createElement("input");
       name.className = "c-name"; name.type = "text"; name.placeholder = "장소 이름"; name.value = c.name || "";
-      name.addEventListener("input", function () { c.name = name.value; clearGeo(c); scheduleWrite(); });
+      name.addEventListener("input", function () { c.name = name.value; scheduleWrite(); });
       var del = document.createElement("button");
       del.className = "entry-del"; del.type = "button"; del.innerHTML = "&times;";
       del.setAttribute("aria-label", "후보지 삭제");
@@ -1062,7 +1069,7 @@
 
       var addr = document.createElement("input");
       addr.className = "c-addr"; addr.type = "text"; addr.placeholder = "주소"; addr.value = c.addr || "";
-      addr.addEventListener("input", function () { c.addr = addr.value; clearGeo(c); scheduleWrite(); });
+      addr.addEventListener("input", function () { c.addr = addr.value; scheduleWrite(); });
 
       var link = document.createElement("input");
       link.className = "c-link"; link.type = "text"; link.placeholder = "지도 링크"; link.value = c.link || "";
@@ -1100,7 +1107,6 @@
       box.appendChild(head); box.appendChild(addr); box.appendChild(link); box.appendChild(actions);
       candList.appendChild(box);
     });
-    updateMap();
   }
 
   function parseShared(text) {
@@ -1257,14 +1263,6 @@
       }
     });
 
-    // 후보지
-    state.candidates.forEach(function (c) {
-      if (!hasGeo(c)) return;
-      L.marker([c.lat, c.lng], { icon: mkIcon("cand", "", 16) })
-        .bindPopup(popupNode(c.name, c.addr, "후보지")).addTo(mapLayer);
-      pts.push([c.lat, c.lng]); sig.push("c" + c.lat + "," + c.lng);
-    });
-
     // 선택한 날 일정: 번호 + 동선
     var day = state.days[activeDay];
     var route = [], n = 0, missing = 0;
@@ -1273,7 +1271,9 @@
         if (hasGeo(e)) {
           n++;
           L.marker([e.lat, e.lng], { icon: mkIcon("day", String(n), 26), zIndexOffset: 500 })
-            .bindPopup(popupNode(e.title, e.note, (e.time ? e.time + " " : "") + n + "번째")).addTo(mapLayer);
+            .bindPopup(popupNode(e.title, e.note, (e.time ? e.time + " " : "") + n + "번째"))
+            .bindTooltip(escapeHtml((e.time ? e.time + " " : "") + e.title), { permanent: true, direction: "right", offset: [14, 0], className: "mk-label day" })
+            .addTo(mapLayer);
           route.push([e.lat, e.lng]); pts.push([e.lat, e.lng]); sig.push("d" + e.lat + "," + e.lng);
         } else if (e.title && looksLikeAddr(e.note) && e.geo === 0) {
           missing++;
@@ -1288,7 +1288,9 @@
     searchItems.forEach(function (it, idx) {
       if (!hasGeo(it)) { searchMarkers.push(null); return; }
       var m = L.marker([it.lat, it.lng], { icon: mkIcon("srch", String.fromCharCode(65 + idx), 26), zIndexOffset: 1000 })
-        .bindPopup(popupNode(it.name, it.addr, "검색")).addTo(mapLayer);
+        .bindPopup(popupNode(it.name, it.addr, "검색"))
+        .bindTooltip(escapeHtml(it.name), { permanent: true, direction: "right", offset: [14, 0], className: "mk-label srch" })
+        .addTo(mapLayer);
       searchMarkers.push(m);
       pts.push([it.lat, it.lng]); sig.push("s" + it.lat + "," + it.lng);
     });
@@ -1330,9 +1332,6 @@
       if (lg.label === "숙소" && !hasGeo(lg) && lg.geo !== 0) {
         list.push({ obj: lg, name: String(lg.value || "").replace(/\(.*?\)/g, "").trim(), addr: lg.sub || "" });
       }
-    });
-    state.candidates.forEach(function (c) {
-      if (c.name && !hasGeo(c) && c.geo !== 0) list.push({ obj: c, name: c.name, addr: c.addr || "" });
     });
     state.days.forEach(function (d) {
       d.entries.forEach(function (e) {
