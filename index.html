@@ -227,6 +227,11 @@
   }
   .entry-move:hover:not(:disabled) { color: var(--tangerine-deep); background: rgba(226,118,44,0.1); }
   .entry-move:disabled { opacity: .25; cursor: default; }
+  .entry-day {
+    border: 1px solid var(--line); border-radius: 999px; background: var(--card-bg); color: var(--text-dim);
+    font-family: inherit; font-size: 12px; padding: 5px 6px; margin: 0 2px 0 4px; cursor: pointer; max-width: 76px;
+  }
+  .entry-day:hover, .entry-day:focus { border-color: var(--tangerine); color: var(--text); }
   .entry-del:hover { color: var(--danger); background: rgba(168,70,50,0.08); }
 
   .add-row {
@@ -480,7 +485,8 @@
 
   @media (max-width: 420px) {
     .logi-strip { grid-template-columns: 1fr; }
-    .entry { grid-template-columns: 52px 1fr auto; }
+    .entry { grid-template-columns: 52px 1fr; }
+    .entry-ctl { grid-column: 1 / -1; justify-content: flex-end; padding-top: 0; margin-top: -4px; }
   }
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -1698,6 +1704,32 @@
           });
           ctl.appendChild(b);
         });
+        // 다른 날짜로 이동
+        var daySel = document.createElement("select");
+        daySel.className = "entry-day";
+        daySel.setAttribute("aria-label", "날짜 이동");
+        daySel.title = "다른 날짜로 이동";
+        state.days.forEach(function (d, di) {
+          var o = document.createElement("option");
+          o.value = di;
+          o.textContent = d.label;
+          if (di === dIdx) o.selected = true;
+          daySel.appendChild(o);
+        });
+        daySel.addEventListener("change", function () {
+          var to = parseInt(daySel.value, 10);
+          var target = state.days[to];
+          var at = day.entries.indexOf(entry);
+          if (!target || to === dIdx || at < 0) return;
+          day.entries.splice(at, 1);
+          target.entries.push(entry);
+          placeByTime(target, entry); // 시간이 있으면 그날의 시간 순서에 맞는 자리로
+          scheduleWrite();
+          renderTabs();
+          renderPanels();
+          toast((entry.title || "일정") + " → " + target.label + " " + target.date + "(으)로 옮겼어요.");
+        });
+        ctl.appendChild(daySel);
         ctl.appendChild(delBtn);
         row.appendChild(ctl);
         timeline.appendChild(row);
