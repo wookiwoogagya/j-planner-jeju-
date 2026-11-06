@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>남양주 J플래너</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍁</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stone: #f4f0e6;
+    --stone-dim: #e9e2d2;
+    --basalt: #26241f;
+    --basalt-soft: #44413a;
+    --tangerine: #e2762c;
+    --tangerine-deep: #c2601e;
+    --ocean: #2d5d72;
+    --oreum: #4c6b4f;
+    --line: #d9d0ba;
+    --card-bg: #fffdf8;
+    --text: #2a2721;
+    --text-dim: #716b5c;
+    --danger: #a84632;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --stone: #1b1915;
+      --stone-dim: #242019;
+      --basalt: #0f0e0b;
+      --basalt-soft: #2c2922;
+      --tangerine: #f0863f;
+      --tangerine-deep: #e2762c;
+      --ocean: #5a93ab;
+      --oreum: #7fa082;
+      --line: #3a362c;
+      --card-bg: #221f19;
+      --text: #ece6d8;
+      --text-dim: #a69e8b;
+      --danger: #d97759;
+    }
+  }
+  :root[data-theme="dark"] {
+    --stone: #1b1915;
+    --stone-dim: #242019;
+    --basalt: #0f0e0b;
+    --basalt-soft: #2c2922;
+    --tangerine: #f0863f;
+    --tangerine-deep: #e2762c;
+    --ocean: #5a93ab;
+    --oreum: #7fa082;
+    --line: #3a362c;
+    --card-bg: #221f19;
+    --text: #ece6d8;
+    --text-dim: #a69e8b;
+    --danger: #d97759;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--stone);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 64px; }
+
+  header.hero {
+    background: var(--basalt);
+    color: #f4f0e6; /* 다크 모드에서도 제목이 보이도록 고정 */
+    padding: env(safe-area-inset-top, 0px) 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero .texture {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 30%, rgba(226,118,44,0.16) 0, transparent 40%),
+      radial-gradient(circle at 85% 70%, rgba(45,93,114,0.22) 0, transparent 45%);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 760px; margin: 0 auto; padding: 40px 20px 32px; position: relative; }
+  .hero-eyebrow {
+    font-size: 13px; color: var(--tangerine); font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  h1.hero-title {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: clamp(32px, 7vw, 44px);
+    line-height: 1.15;
+    margin: 10px 0 6px;
+  }
+  .hero-sub { color: #c9c2b0; font-size: 15px; margin: 0; }
+
+  .logi-strip {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 24px 0 8px;
+  }
+  .logi-item {
+    background: var(--card-bg);
+    padding: 14px 16px;
+  }
+  .logi-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  .logi-value { font-size: 14.5px; font-weight: 500; line-height: 1.4; }
+  .logi-value small { display: block; font-weight: 400; color: var(--text-dim); font-size: 12.5px; margin-top: 2px; }
+
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin: 36px 0 14px;
+  }
+
+  nav.days {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 6px;
+    margin-bottom: 18px;
+    scrollbar-width: none;
+  }
+  nav.days::-webkit-scrollbar { display: none; }
+  .day-tab {
+    flex: 0 0 auto;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .day-tab[aria-selected="true"] {
+    background: var(--tangerine);
+    border-color: var(--tangerine);
+    color: #fff;
+  }
+  .day-tab .cnt {
+    font-size: 11.5px;
+    opacity: .75;
+    margin-left: 4px;
+  }
+
+  .day-panel { display: none; }
+  .day-panel.active { display: block; }
+
+  .timeline { position: relative; padding-left: 2px; }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .entry:last-of-type { border-bottom: none; }
+
+  .entry-time {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--ocean);
+    padding-top: 10px;
+    background: transparent;
+    border: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  .entry-time::placeholder { color: var(--text-dim); font-weight: 400; }
+
+  .entry-body { min-width: 0; }
+  .entry-title {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    padding: 8px 0 2px;
+    font-family: inherit;
+  }
+  .entry-title::placeholder { color: var(--text-dim); font-weight: 400; }
+  .entry-note {
+    width: 100%;
+    border: none;
+    background: transparent;
+    resize: none;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    font-family: inherit;
+    line-height: 1.5;
+    padding: 0 0 4px;
+    overflow: hidden;
+  }
+  .entry-note::placeholder { color: var(--line); }
+
+  .entry-del {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 8px 4px;
+    border-radius: 6px;
+  }
+  .entry-ctl { display: flex; align-items: center; gap: 0; padding-top: 4px; }
+  .entry-move {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 11px; line-height: 1; padding: 9px 5px; border-radius: 6px; font-family: inherit;
+  }
+  .entry-move:hover:not(:disabled) { color: var(--tangerine-deep); background: rgba(226,118,44,0.1); }
+  .entry-move:disabled { opacity: .25; cursor: default; }
+  .entry-day {
+    border: 1px solid var(--line); border-radius: 999px; background: var(--card-bg); color: var(--text-dim);
+    font-family: inherit; font-size: 12px; padding: 5px 6px; margin: 0 2px 0 4px; cursor: pointer; max-width: 76px;
+  }
+  .entry-day:hover, .entry-day:focus { border-color: var(--tangerine); color: var(--text); }
+  .entry-del:hover { color: var(--danger); background: rgba(168,70,50,0.08); }
+  .entry-pin { background: none; border: none; cursor: pointer; font-size: 14px; padding: 7px 5px; border-radius: 6px; }
+  .entry-pin:hover { background: rgba(226,118,44,0.1); }
+
+  .add-row {
+    margin-top: 10px;
+    width: 100%;
+    padding: 13px;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color .15s, color .15s;
+  }
+  .add-row:hover { border-color: var(--tangerine); color: var(--tangerine-deep); }
+
+  .empty-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13.5px;
+    padding: 28px 10px 18px;
+  }
+
+  .footer-note {
+    margin-top: 40px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+
+
+  /* ── 동기화 상태 줄 ── */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .sync-dot {
+    flex: 0 0 auto;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .sync-bar[data-state="ok"] .sync-dot { background: var(--oreum); }
+  .sync-bar[data-state="busy"] .sync-dot { background: var(--tangerine); }
+  .sync-bar[data-state="error"] .sync-dot { background: var(--danger); }
+  .sync-text { min-width: 0; }
+  .sync-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    background: var(--card-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .sync-btn:hover { border-color: var(--tangerine); color: var(--tangerine-deep); }
+
+  dialog.sync-dialog {
+    width: min(460px, calc(100vw - 32px));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card-bg);
+    color: var(--text);
+    padding: 22px 22px 18px;
+  }
+  dialog.sync-dialog::backdrop { background: rgba(15,14,11,0.55); }
+  .sync-dialog h2 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 19px;
+    margin: 0 0 8px;
+  }
+  .sync-dialog p { font-size: 13.5px; line-height: 1.6; color: var(--text-dim); margin: 0 0 14px; }
+  .sync-dialog label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; }
+  .sync-dialog input[type="url"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--stone);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .sync-dialog input[type="url"]:focus { outline: 2px solid var(--tangerine); outline-offset: 1px; }
+  .sync-msg { min-height: 20px; font-size: 13px; margin: 10px 0 4px; color: var(--text-dim); }
+  .sync-msg.err { color: var(--danger); }
+  .sync-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .sync-actions button {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .sync-actions button.primary {
+    background: var(--tangerine);
+    border-color: var(--tangerine);
+    color: #fff;
+  }
+  .sync-actions button.danger { color: var(--danger); }
+  .sync-actions .spacer { flex: 1 1 auto; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(20px);
+    max-width: calc(100vw - 40px);
+    background: var(--basalt);
+    color: #f4f0e6;
+    font-size: 13.5px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 2000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
+  .cand-sub { font-size: 13px; color: var(--text-dim); margin: -6px 0 14px; line-height: 1.5; }
+  .cand {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .cand-head { display: flex; gap: 8px; align-items: center; }
+  .cand input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .cand .c-name { font-size: 16px; font-weight: 700; padding: 2px 0; }
+  .cand .c-addr { font-size: 13px; color: var(--text-dim); padding: 2px 0; }
+  .cand .c-link { font-size: 12px; color: var(--text-dim); padding: 2px 0; }
+  .cand input::placeholder { color: var(--line); }
+  .cand-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .cand-actions select, .cand-actions a, .cand-actions button {
+    font-family: inherit; font-size: 13px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--stone); color: var(--text);
+    padding: 7px 13px; cursor: pointer; text-decoration: none;
+  }
+  .cand-actions button.go { background: var(--tangerine); border-color: var(--tangerine); color: #fff; font-weight: 500; }
+  .cand-actions a.map { color: var(--ocean); }
+
+
+  /* ── 지도 ── */
+  .map-wrap {
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    isolation: isolate; background: var(--stone-dim);
+  }
+  #map { height: 340px; width: 100%; }
+  .map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--text-dim); margin: 10px 0 0; }
+  .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lg { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+  .lg.day { background: #e2762c; } .lg.cand { background: #2d5d72; } .lg.srch { background: #3f8f52; } .lg.home { background: #26241f; }
+  .mk {
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45);
+    color: #fff; font: 700 12px/1 'Noto Sans KR', sans-serif;
+  }
+  .mk.day { background: #e2762c; } .mk.cand { background: #2d5d72; } .mk.srch { background: #3f8f52; } .mk.home { background: #26241f; }
+  .leaflet-tooltip.mk-label {
+    background: rgba(255,253,248,.95); color: #26241f; border: 1px solid #d9d0ba; border-radius: 8px;
+    padding: 2px 7px; font: 500 12px/1.4 'Noto Sans KR', sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .leaflet-tooltip.mk-label::before { display: none; }
+  .leaflet-tooltip.mk-label.day { border-color: #e2762c; }
+  .leaflet-tooltip.mk-label.srch { border-color: #3f8f52; }
+  .leaflet-popup-content { font-family: 'Noto Sans KR', sans-serif; font-size: 13px; line-height: 1.45; margin: 10px 14px; }
+  .pp-name { font-weight: 700; color: #26241f; }
+  .pp-addr { color: #716b5c; font-size: 12px; margin-top: 2px; }
+  .sr-badge {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: #3f8f52; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  }
+  .sr-badge.none { background: var(--line); color: var(--text-dim); }
+  .sr-info { cursor: pointer; }
+
+  /* ── 장소 검색 ── */
+  .search-box { margin: 0 0 16px; }
+  .search-row { display: flex; gap: 8px; }
+  .search-row input {
+    flex: 1 1 auto; min-width: 0; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--card-bg); color: var(--text); font-family: inherit; font-size: 14.5px;
+    padding: 11px 16px;
+  }
+  .search-row input:focus { outline: 2px solid var(--tangerine); outline-offset: 1px; }
+  .search-row input::placeholder { color: var(--text-dim); }
+  .search-row button {
+    flex: 0 0 auto; padding: 0 18px; border-radius: 999px; border: none;
+    background: var(--tangerine); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .search-row button:disabled { opacity: .6; cursor: default; }
+  .search-row button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text-dim); padding: 0 14px; }
+  .search-row button.ghost:hover { border-color: var(--danger); color: var(--danger); }
+  .search-row button[hidden] { display: none; }
+  .sr-btns { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .sr-add.fill { background: var(--tangerine); color: #fff; }
+  .sr-add.fill:disabled { background: transparent; }
+  .search-msg { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+  .search-msg.err { color: var(--danger); }
+  .search-results { margin-top: 8px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card-bg); }
+  .search-results:empty { display: none; }
+  .sr-item { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .sr-item:last-child { border-bottom: none; }
+  .sr-info { flex: 1 1 auto; min-width: 0; }
+  .sr-name { font-size: 15px; font-weight: 500; }
+  .sr-cat { font-size: 12px; color: var(--ocean); margin-left: 6px; font-weight: 400; }
+  .sr-addr { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; }
+  .sr-add {
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--tangerine);
+    background: transparent; color: var(--tangerine-deep); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .sr-add:disabled { border-color: var(--line); color: var(--text-dim); cursor: default; }
+
+  .paste-box { margin-top: 14px; }
+  .paste-box textarea {
+    width: 100%; resize: vertical; border: 1.5px dashed var(--line); border-radius: 12px;
+    background: var(--card-bg); color: var(--text); font-family: inherit; font-size: 14px;
+    padding: 12px; line-height: 1.5;
+  }
+  .paste-box textarea::placeholder { color: var(--text-dim); }
+  .paste-box button {
+    margin-top: 8px; padding: 9px 16px; border-radius: 999px; border: none;
+    background: var(--tangerine); color: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .paste-msg { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; line-height: 1.5; }
+
+  @media (max-width: 420px) {
+    .logi-strip { grid-template-columns: 1fr; }
+    .entry { grid-template-columns: 52px 1fr; }
+    .entry-ctl { grid-column: 1 / -1; justify-content: flex-end; padding-top: 0; margin-top: -4px; }
+  }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<header class="hero">
+  <div class="texture"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">J플래너 · NAMYANGJU</div>
+    <h1 class="hero-title">남양주 단풍 나들이</h1>
+    <p class="hero-sub">2026.11.07 (토) — 2026.11.08 (일) · 반려견 동반</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="logi-strip" id="logiStrip"></div>
+
+  <div class="sync-bar" id="syncBar" data-state="off">
+    <span class="sync-dot"></span>
+    <span class="sync-text" id="syncText">동기화 꺼짐 · 이 브라우저에만 저장</span>
+    <button class="sync-btn" id="syncOpen" type="button">동기화 설정</button>
+  </div>
+
+  <div class="section-title">일정</div>
+
+  <nav class="days" id="dayTabs"></nav>
+
+  <div id="dayPanels"></div>
+
+  <div id="mapSection">
+    <div class="section-title">지도</div>
+    <div class="map-wrap"><div id="map"></div></div>
+    <div class="map-legend">
+      <span><i class="lg day"></i>선택한 날 일정 (번호 = 시간순 동선, 일정의 📍를 누르면 이동)</span>
+      <span><i class="lg srch"></i>검색 결과</span>
+      <span><i class="lg home"></i>숙소</span>
+    </div>
+    <div id="mapMsg" class="search-msg"></div>
+  </div>
+
+  <div class="section-title">후보지</div>
+  <p class="cand-sub">가고 싶은 곳을 검색해서 모아두는 목록이에요. 날짜를 골라 "일정에 추가"를 누르면 해당 날짜 일정에 들어갑니다.</p>
+  <div class="search-box">
+    <div class="search-row">
+      <input type="search" id="searchInput" placeholder="장소 검색 (예: 남양주 애견동반 카페)" autocomplete="off" enterkeyhint="search">
+      <button type="button" id="searchBtn">검색</button>
+      <button type="button" id="searchClear" class="ghost" hidden>지우기</button>
+    </div>
+    <div id="searchMsg" class="search-msg"></div>
+    <div id="searchResults" class="search-results"></div>
+  </div>
+  <div id="candList"></div>
+  <div class="paste-box">
+    <textarea id="pasteArea" rows="3" placeholder="네이버지도 공유 내용을 붙여넣으면 후보지로 추가돼요 (여러 곳을 한꺼번에 붙여넣어도 됩니다)"></textarea>
+    <button type="button" id="pasteBtn">후보지로 추가</button>
+    <div id="pasteMsg" class="paste-msg"></div>
+  </div>
+  <button class="add-row" type="button" id="addCand">+ 직접 입력해서 후보지 추가</button>
+
+  <div class="footer-note">
+    일정과 후보지는 비어 있어요. 검색해서 후보지에 모으고, 날짜를 골라 일정에 넣은 뒤 시간을 적으면 시간순으로 정렬되고 지도에 동선이 그려져요.<br>
+    제주 플래너와 같은 동기화 주소를 쓰고, 남양주 일정은 시트 안의 별도 칸에 저장돼요. 제주 플래너 내용은 그대로 유지됩니다.
+  </div>
+
+</div>
+
+<dialog class="sync-dialog" id="syncDialog">
+  <h2>동기화 설정</h2>
+  <p>Google Apps Script 웹 앱 주소(…/exec 로 끝나는 주소)를 붙여넣으면, 같은 주소로 연결한 기기끼리 일정이 자동으로 맞춰져요.</p>
+  <label for="syncUrl">웹 앱 주소</label>
+  <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+  <div class="sync-msg" id="syncMsg"></div>
+  <div class="sync-actions">
+    <button type="button" class="primary" id="syncSave">저장하고 연결</button>
+    <button type="button" id="syncShare">공유 링크 복사</button>
+    <button type="button" class="danger" id="syncOff">연결 해제</button>
+    <span class="spacer"></span>
+    <button type="button" id="syncClose">닫기</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "namyangju-jplanner-v1";
+  // 동기화 서버(구글 시트)는 제주 플래너와 함께 쓰고, 이 플래너 내용은 data.plans[PLAN_ID] 칸에 따로 저장합니다.
+  var PLAN_ID = "namyangju-2026-11";
+  var JEJU_SYNC_KEY = "jeju-jplanner-sync-v1"; // 같은 사이트의 제주 플래너에 연결해둔 주소를 자동으로 가져옴
+
+  var defaultData = {
+    logistics: [
+      { label: "일정", value: "11/7 (토) – 11/8 (일)", sub: "주말 나들이" },
+      { label: "지역", value: "남양주 일대", sub: "단풍 구경 · 애견동반 카페·맛집" }
+    ],
+    candidates: [],
+    days: [
+      { label: "Day 1", date: "11/7 (토)", entries: [] },
+      { label: "Day 2", date: "11/8 (일)", entries: [] }
+    ]
+  };
+
+  function ensureShape(o) {
+    if (o && !Array.isArray(o.candidates)) {
+      o.candidates = JSON.parse(JSON.stringify(defaultData.candidates));
+      return true;
+    }
+    return false;
+  }
+
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.days)) { ensureShape(parsed); return parsed; }
+      }
+    } catch (e) { /* ignore, fall back to default */ }
+    return JSON.parse(JSON.stringify(defaultData));
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) { /* storage unavailable — edits still work this session */ }
+  }
+
+  var state = loadLocal();
+  var activeDay = 0;
+
+  var logiStrip = document.getElementById("logiStrip");
+  var dayTabs = document.getElementById("dayTabs");
+  var dayPanels = document.getElementById("dayPanels");
+  var candList = document.getElementById("candList");
+  var pasteArea = document.getElementById("pasteArea");
+
+  /* ───────────── 동기화 ───────────── */
+
+  function isValidData(d) {
+    if (!d || !Array.isArray(d.days) || !Array.isArray(d.logistics)) return false;
+    return d.days.every(function (day) { return day && Array.isArray(day.entries); });
+  }
+
+  var SYNC_KEY = "namyangju-jplanner-sync-v1";
+  // 주소를 파일에 직접 넣어두고 싶으면 여기에 적으세요. (저장소가 Public이면 주소도 공개됩니다)
+  var DEFAULT_SYNC_URL = "";
+  var POLL_MS = 10000;      // 다른 기기 변경 확인 주기
+  var PUSH_DELAY_MS = 1200; // 입력 후 저장까지 대기 시간
+
+  var sync = { url: "", rev: null, dirty: false, busy: false, again: false, pending: null, timer: null };
+  var serverBlob = null; // 서버에 저장된 전체 내용 (제주 플래너 + plans)
+
+  function planOf(blob) {
+    return (blob && blob.plans && typeof blob.plans === "object") ? blob.plans[PLAN_ID] : null;
+  }
+  // 서버의 다른 내용(제주 플래너)은 그대로 두고 이 플래너 칸만 바꾼 전체 내용
+  function mergedBlob() {
+    var b = {};
+    if (serverBlob && typeof serverBlob === "object") {
+      Object.keys(serverBlob).forEach(function (k) { b[k] = serverBlob[k]; });
+    }
+    if (!Array.isArray(b.days)) b.days = [];
+    if (!Array.isArray(b.logistics)) b.logistics = [];
+    var plans = {};
+    if (b.plans && typeof b.plans === "object") Object.keys(b.plans).forEach(function (k) { plans[k] = b.plans[k]; });
+    plans[PLAN_ID] = state;
+    b.plans = plans;
+    return b;
+  }
+
+  var syncBar = document.getElementById("syncBar");
+  var syncText = document.getElementById("syncText");
+  var syncDialog = document.getElementById("syncDialog");
+  var syncUrlInput = document.getElementById("syncUrl");
+  var syncMsg = document.getElementById("syncMsg");
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+
+  function loadMeta() {
+    try {
+      var raw = localStorage.getItem(SYNC_KEY);
+      if (raw) {
+        var m = JSON.parse(raw);
+        if (m && typeof m.url === "string" && isValidUrl(m.url)) {
+          sync.url = m.url;
+          sync.rev = (typeof m.rev === "number") ? m.rev : null;
+          sync.dirty = !!m.dirty;
+          return;
+        }
+      }
+    } catch (e) { /* ignore */ }
+    try {
+      var jr = localStorage.getItem(JEJU_SYNC_KEY);
+      var jm = jr ? JSON.parse(jr) : null;
+      if (jm && isValidUrl(jm.url)) { sync.url = jm.url; return; }
+    } catch (e) { /* ignore */ }
+    if (isValidUrl(DEFAULT_SYNC_URL)) sync.url = DEFAULT_SYNC_URL;
+  }
+
+  function saveMeta() {
+    try {
+      localStorage.setItem(SYNC_KEY, JSON.stringify({ url: sync.url, rev: sync.rev, dirty: sync.dirty }));
+    } catch (e) { /* ignore */ }
+  }
+
+  // 구글 Apps Script 웹 앱 주소만 허용 (다른 서버로 일정이 전송되지 않도록)
+  function isValidUrl(u) {
+    return /^https:\/\/script\.google\.com\/(a\/macros\/[^\/]+|macros)\/s\/[\w-]+\/exec$/.test(String(u || ""));
+  }
+
+  function setStatus(kind, text) {
+    syncBar.setAttribute("data-state", kind);
+    syncText.textContent = text;
+    if (kind === "off" && typeof updateMap === "function") { try { updateMap(); } catch (e) { /* 지도 준비 전 */ } }
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function timeStr() {
+    var d = new Date();
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 3500);
+  }
+
+  function isEditing() {
+    var a = document.activeElement;
+    if (!a || (a.tagName !== "INPUT" && a.tagName !== "TEXTAREA" && a.tagName !== "SELECT")) return false;
+    return dayPanels.contains(a) || candList.contains(a) || a === pasteArea;
+  }
+
+  // 읽기는 JSONP(<script> 태그) 방식 — 주소창에서 여는 것과 같은 요청이라 CORS 차단을 받지 않습니다.
+  var jsonpSeq = 0;
+  function jsonp(url, params) {
+    return new Promise(function (resolve, reject) {
+      var name = "__jplanner_nyj_cb_" + Date.now() + "_" + (jsonpSeq++);
+      var el = document.createElement("script");
+      var done = false;
+      function finish(fn, arg) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try { delete window[name]; } catch (e) { window[name] = undefined; }
+        if (el.parentNode) el.parentNode.removeChild(el);
+        fn(arg);
+      }
+      var timer = setTimeout(function () { finish(reject, new Error("응답 시간 초과")); }, 25000);
+      window[name] = function (res) { finish(resolve, res); };
+      el.onerror = function () { finish(reject, new Error("서버에 접속하지 못했어요")); };
+      el.src = url + "?callback=" + name + (params ? "&" + params : "") + "&t=" + Date.now();
+      document.head.appendChild(el);
+    });
+  }
+
+  function apiGet(url) {
+    return jsonp(url, sync.rev === null ? "" : "rev=" + sync.rev).then(function (res) {
+      if (res && res.ok && !(res.v >= 2)) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
+      return res;
+    });
+  }
+
+  // 쓰기는 응답을 읽지 않는 방식(no-cors)으로 보내고, 곧바로 다시 읽어서 저장됐는지 확인합니다.
+  function apiPost(url, body) {
+    body.writeId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    var raw = JSON.stringify(body);
+    if (raw.length > 44000) {
+      toast("내용이 너무 길어 동기화하지 못했어요. 메모를 조금 줄여주세요.");
+      return Promise.reject(new Error("내용이 너무 깁니다"));
+    }
+    return fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      credentials: "omit",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: raw
+    }).then(function () {
+      return jsonp(url, "");
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error("저장 확인 실패");
+      if (r.writeId === body.writeId) return { ok: true, rev: r.rev };
+      if (r.rev !== body.baseRev) return { ok: false, conflict: true, rev: r.rev, data: r.data };
+      return { ok: false, error: "저장되지 않았어요" };
+    });
+  }
+
+  // 서버 내용을 이 기기에 반영
+  function adopt(data, rev, force) {
+    if (!force && isEditing()) {
+      sync.pending = { data: data, rev: rev }; // 입력 중이면 입력이 끝난 뒤 반영
+      return;
+    }
+    state = data;
+    sync.rev = rev;
+    sync.dirty = false;
+    sync.pending = null;
+    var migrated = ensureShape(state); // 후보지 목록이 없는 예전 데이터 보정
+    if (activeDay >= state.days.length) activeDay = 0;
+    saveLocal();
+    saveMeta();
+    renderAll();
+    if (migrated) scheduleWrite();
+  }
+
+  function doPush(url) {
+    var sentAt = state.updatedAt;
+    setStatus("busy", "저장 중…");
+    var blob = mergedBlob();
+    return apiPost(url, { baseRev: sync.rev, data: blob }).then(function (res) {
+      if (url !== sync.url) return;
+      if (res && res.ok) {
+        serverBlob = blob;
+        sync.rev = res.rev;
+        if (state.updatedAt === sentAt) sync.dirty = false;
+        else sync.again = true; // 보내는 사이 또 수정됨
+        saveMeta();
+        return;
+      }
+      if (res && res.conflict) {
+        serverBlob = res.data || null;
+        if (isValidData(planOf(res.data))) {
+          adopt(planOf(res.data), res.rev, true);
+          toast("다른 기기에서 먼저 수정돼서 최신 내용으로 불러왔어요.");
+        } else {
+          sync.rev = res.rev; // 서버가 비어 있음 → 다시 올리기
+          sync.again = true;
+        }
+        return;
+      }
+      if (res && res.error === "too_large") {
+        toast("내용이 너무 길어 동기화하지 못했어요. 메모를 조금 줄여주세요.");
+      }
+      throw new Error((res && res.error) || "push failed");
+    });
+  }
+
+  function doPull(url) {
+    return apiGet(url).then(function (res) {
+      if (url !== sync.url) return;
+      if (!res || !res.ok) throw new Error("pull failed");
+      if (res.unchanged || res.rev === sync.rev) return;
+      serverBlob = res.data || null;
+      if (sync.dirty) { sync.again = true; return; } // 내 수정부터 올리고 서버가 판단
+      var plan = planOf(res.data);
+      if (isValidData(plan)) {
+        if (JSON.stringify(plan) === JSON.stringify(state)) { sync.rev = res.rev; saveMeta(); return; } // 제주 쪽만 바뀜
+        adopt(plan, res.rev, false);
+      } else {
+        sync.rev = res.rev; // 서버가 비워짐 → 내 내용으로 다시 채우기
+        sync.dirty = true;
+        sync.again = true;
+        saveMeta();
+      }
+    });
+  }
+
+  // 처음 연결: 서버에 내용이 있으면 그걸 받고, 비어 있으면 이 기기 내용을 올림
+  function doFirstSync(url) {
+    setStatus("busy", "연결 중…");
+    return apiGet(url).then(function (res) {
+      if (url !== sync.url) return;
+      if (!res || !res.ok) throw new Error("connect failed");
+      serverBlob = res.data || null;
+      if (isValidData(planOf(res.data))) {
+        adopt(planOf(res.data), res.rev, true);
+        return;
+      }
+      sync.rev = res.rev;
+      saveMeta();
+      return doPush(url);
+    });
+  }
+
+  function syncNow() {
+    if (!sync.url) {
+      setStatus("off", "동기화 꺼짐 · 이 브라우저에만 저장");
+      return;
+    }
+    if (sync.busy) { sync.again = true; return; }
+    sync.busy = true;
+    var url = sync.url;
+    var job;
+    if (sync.rev === null) job = doFirstSync(url);
+    else if (sync.dirty) job = doPush(url);
+    else job = doPull(url);
+
+    job.then(function () {
+      if (url !== sync.url) return;
+      setStatus("ok", "동기화됨 · " + timeStr());
+    }).catch(function (err) {
+      if (url !== sync.url) return;
+      sync.lastError = String((err && err.message) || err);
+      sync.again = false; // 실패 시엔 다음 주기에 자동 재시도
+      setStatus("error", "연결 안 됨 · 자동으로 다시 시도해요");
+    }).then(function () {
+      sync.busy = false;
+      if (sync.again) {
+        sync.again = false;
+        setTimeout(syncNow, 300);
+      }
+    });
+  }
+
+  function schedulePush() {
+    if (!sync.url) return;
+    clearTimeout(sync.timer);
+    sync.timer = setTimeout(syncNow, PUSH_DELAY_MS);
+  }
+
+  // 사용자가 내용을 바꿀 때마다 호출
+  function scheduleWrite() {
+    state.updatedAt = Date.now();
+    saveLocal();
+    if (sync.url) {
+      sync.dirty = true;
+      saveMeta();
+      schedulePush();
+    }
+  }
+
+  function connect(url) {
+    sync.url = url;
+    sync.rev = null;
+    sync.dirty = false;
+    sync.pending = null;
+    saveMeta();
+    syncNow();
+  }
+
+  function disconnect() {
+    clearTimeout(sync.timer);
+    sync.url = "";
+    sync.rev = null;
+    sync.dirty = false;
+    sync.pending = null;
+    saveMeta();
+    setStatus("off", "동기화 꺼짐 · 이 브라우저에만 저장");
+  }
+
+  function showMsg(text, isErr) {
+    syncMsg.textContent = text || "";
+    syncMsg.className = "sync-msg" + (isErr ? " err" : "");
+  }
+
+  function shareLink() {
+    return location.origin + location.pathname + "#sync=" + encodeURIComponent(sync.url);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (ok) resolve(); else reject(new Error("copy failed"));
+    });
+  }
+
+  document.getElementById("syncOpen").addEventListener("click", function () {
+    syncUrlInput.value = sync.url;
+    if (sync.url && syncBar.getAttribute("data-state") === "error") {
+      showMsg("연결 실패: " + (sync.lastError || "알 수 없는 오류"), true);
+    } else {
+      showMsg(sync.url ? "현재 연결되어 있어요." : "");
+    }
+    if (typeof syncDialog.showModal === "function") syncDialog.showModal();
+    else syncDialog.setAttribute("open", "");
+  });
+
+  document.getElementById("syncClose").addEventListener("click", function () {
+    syncDialog.close();
+  });
+
+  document.getElementById("syncSave").addEventListener("click", function () {
+    var u = syncUrlInput.value.trim();
+    if (!isValidUrl(u)) {
+      showMsg("주소 형식이 맞지 않아요. https://script.google.com/macros/s/…/exec 형태여야 해요.", true);
+      return;
+    }
+    if (u !== sync.url) connect(u); else syncNow();
+    showMsg("연결했어요. 다른 기기에는 '공유 링크 복사'로 보내면 돼요.");
+  });
+
+  document.getElementById("syncShare").addEventListener("click", function () {
+    if (!sync.url) { showMsg("먼저 주소를 저장하고 연결해주세요.", true); return; }
+    copyText(shareLink()).then(function () {
+      showMsg("공유 링크를 복사했어요. 이 링크로 열면 자동으로 연결돼요.");
+    }).catch(function () {
+      showMsg("복사하지 못했어요. 주소창 주소 뒤에 #sync=웹앱주소 를 붙여 보내주세요.", true);
+    });
+  });
+
+  document.getElementById("syncOff").addEventListener("click", function () {
+    disconnect();
+    syncUrlInput.value = "";
+    showMsg("연결을 해제했어요. 이제 이 브라우저에만 저장돼요.");
+  });
+
+  // 입력이 끝나면 미뤄둔 서버 변경을 반영
+  document.addEventListener("focusout", function () {
+    setTimeout(function () {
+      if (!sync.pending || isEditing()) return;
+      if (sync.dirty) { sync.pending = null; syncNow(); }
+      else adopt(sync.pending.data, sync.pending.rev, true);
+    }, 150);
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) syncNow();
+  });
+  window.addEventListener("online", syncNow);
+  setInterval(function () {
+    if (sync.url && !document.hidden) syncNow();
+  }, POLL_MS);
+
+  function renderAll() {
+    renderLogistics();
+    renderTabs();
+    renderPanels();
+    renderCandidates();
+  }
+
+
+  function renderLogistics() {
+    logiStrip.innerHTML = "";
+    state.logistics.forEach(function (item) {
+      var div = document.createElement("div");
+      div.className = "logi-item";
+      div.innerHTML =
+        '<div class="logi-label">' + escapeHtml(item.label) + '</div>' +
+        '<div class="logi-value">' + escapeHtml(item.value) +
+        (item.sub ? '<small>' + escapeHtml(item.sub) + '</small>' : '') +
+        '</div>';
+      logiStrip.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function renderTabs() {
+    dayTabs.innerHTML = "";
+    state.days.forEach(function (day, idx) {
+      var btn = document.createElement("button");
+      btn.className = "day-tab";
+      btn.type = "button";
+      btn.setAttribute("aria-selected", idx === activeDay ? "true" : "false");
+      var filled = day.entries.filter(function (e) { return e.time || e.title; }).length;
+      btn.innerHTML = escapeHtml(day.label) + " <span class='cnt'>" + escapeHtml(day.date) + "</span>";
+      btn.addEventListener("click", function () {
+        activeDay = idx;
+        renderTabs();
+        renderPanels();
+      });
+      dayTabs.appendChild(btn);
+    });
+  }
+
+  function autoGrow(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+
+  function renderCandidates() {
+    candList.innerHTML = "";
+    state.candidates.forEach(function (c, i) {
+      var box = document.createElement("div");
+      box.className = "cand";
+
+      var head = document.createElement("div");
+      head.className = "cand-head";
+      var name = document.createElement("input");
+      name.className = "c-name"; name.type = "text"; name.placeholder = "장소 이름"; name.value = c.name || "";
+      name.addEventListener("input", function () { c.name = name.value; scheduleWrite(); });
+      var del = document.createElement("button");
+      del.className = "entry-del"; del.type = "button"; del.innerHTML = "&times;";
+      del.setAttribute("aria-label", "후보지 삭제");
+      del.addEventListener("click", function () {
+        state.candidates.splice(i, 1); scheduleWrite(); renderCandidates();
+      });
+      head.appendChild(name); head.appendChild(del);
+
+      var addr = document.createElement("input");
+      addr.className = "c-addr"; addr.type = "text"; addr.placeholder = "주소"; addr.value = c.addr || "";
+      addr.addEventListener("input", function () { c.addr = addr.value; scheduleWrite(); });
+
+      var link = document.createElement("input");
+      link.className = "c-link"; link.type = "text"; link.placeholder = "지도 링크"; link.value = c.link || "";
+      link.addEventListener("input", function () { c.link = link.value; scheduleWrite(); });
+
+      var actions = document.createElement("div");
+      actions.className = "cand-actions";
+      var sel = document.createElement("select");
+      state.days.forEach(function (d, di) {
+        var o = document.createElement("option");
+        o.value = di; o.textContent = d.label + " " + d.date;
+        sel.appendChild(o);
+      });
+      var go = document.createElement("button");
+      go.className = "go"; go.type = "button"; go.textContent = "일정에 추가";
+      go.addEventListener("click", function () {
+        var day = state.days[parseInt(sel.value, 10)];
+        var ne = { time: "", title: c.name || "", note: c.addr || "" };
+        if (hasGeo(c)) { ne.lat = c.lat; ne.lng = c.lng; }
+        day.entries.push(ne);
+        scheduleWrite();
+        renderTabs(); renderPanels();
+        go.textContent = "추가됨 ✓";
+        setTimeout(function () { go.textContent = "일정에 추가"; }, 1500);
+      });
+      actions.appendChild(sel); actions.appendChild(go);
+      if (c.link && /^https?:\/\//.test(c.link)) {
+        var a = document.createElement("a");
+        a.className = "map"; a.href = c.link; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = "지도 열기";
+        actions.appendChild(a);
+      }
+
+      box.appendChild(head); box.appendChild(addr); box.appendChild(link); box.appendChild(actions);
+      candList.appendChild(box);
+    });
+  }
+
+  function parseShared(text) {
+    var lines = String(text || "").split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var out = [], buf = [];
+    lines.forEach(function (line) {
+      var m = line.match(/https?:\/\/\S+/);
+      if (m) {
+        var before = line.replace(m[0], "").trim();
+        if (before) buf.push(before);
+        buf = buf.filter(function (l) { return !/^\[?네이버\s*지도\]?$/.test(l); });
+        out.push({ name: buf[0] || "", addr: buf[1] || "", link: m[0] });
+        buf = [];
+      } else {
+        buf.push(line);
+      }
+    });
+    return out;
+  }
+  var pasteMsg = document.getElementById("pasteMsg");
+  function addFromPaste() {
+    var items = parseShared(pasteArea.value);
+    if (!items.length) {
+      pasteMsg.textContent = "링크를 찾지 못했어요. 네이버지도 '공유'로 복사한 내용을 그대로 붙여넣어 주세요.";
+      return;
+    }
+    var added = 0, dup = 0, noName = 0;
+    items.forEach(function (it) {
+      var exists = state.candidates.some(function (c) { return c.link && c.link === it.link; });
+      if (exists) { dup++; return; }
+      if (!it.name) noName++;
+      state.candidates.push(it);
+      added++;
+    });
+    if (added) { scheduleWrite(); renderCandidates(); }
+    pasteArea.value = "";
+    var msg = added + "곳을 추가했어요.";
+    if (dup) msg += " (이미 있는 " + dup + "곳은 건너뜀)";
+    if (noName) msg += " 링크만 붙여넣은 " + noName + "곳은 이름과 주소를 직접 입력해주세요.";
+    pasteMsg.textContent = msg;
+  }
+  document.getElementById("pasteBtn").addEventListener("click", addFromPaste);
+  pasteArea.addEventListener("paste", function () { setTimeout(addFromPaste, 0); });
+
+  /* ───────────── 시간순 정렬 ───────────── */
+  // "9:30", "09:30", "930", "14시", "오후 2시 30분" 등을 분 단위 숫자로. 읽을 수 없으면 null
+  function parseTime(t) {
+    t = String(t || "").trim();
+    if (!t) return null;
+    var pm = /(오후|pm|p\.m)/i.test(t), am = /(오전|am|a\.m)/i.test(t);
+    var h, m, r;
+    if ((r = t.match(/(\d{1,2})\s*[:시.]\s*(\d{1,2})?/))) { h = +r[1]; m = r[2] ? +r[2] : 0; }
+    else if ((r = t.match(/^\D*(\d{1,2})(\d{2})\D*$/))) { h = +r[1]; m = +r[2]; }
+    else if ((r = t.match(/^\D*(\d{1,2})\D*$/))) { h = +r[1]; m = 0; }
+    else return null;
+    if (pm && h < 12) h += 12;
+    if (am && h === 12) h = 0;
+    if (h > 29 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  // 시간이 있는 일정은 시간순, 시간이 없는 일정은 그 뒤에 (입력한 순서 유지). 순서가 바뀌면 true
+  function sortDay(day) {
+    var before = day.entries.slice();
+    var keyed = before.map(function (e, i) { return { e: e, i: i, t: parseTime(e.time) }; });
+    keyed.sort(function (a, b) {
+      if (a.t === null && b.t === null) return a.i - b.i;
+      if (a.t === null) return 1;
+      if (b.t === null) return -1;
+      return (a.t - b.t) || (a.i - b.i);
+    });
+    var changed = false;
+    keyed.forEach(function (k, i) { if (before[i] !== k.e) changed = true; day.entries[i] = k.e; });
+    return changed;
+  }
+  function sortAllDays() {
+    var changed = false;
+    state.days.forEach(function (d) { if (sortDay(d)) changed = true; });
+    return changed;
+  }
+
+  // 시간을 입력한 일정 하나만 제자리로 옮김. 다른 일정(시간 없는 것 포함)의 순서는 그대로 둠
+  function placeByTime(day, entry) {
+    var t = parseTime(entry.time);
+    if (t === null) return false;
+    var from = day.entries.indexOf(entry);
+    if (from < 0) return false;
+    var rest = day.entries.filter(function (e) { return e !== entry; });
+    var after = -1, before = -1;
+    rest.forEach(function (e, i) {
+      var x = parseTime(e.time);
+      if (x === null) return;
+      if (x <= t) after = i;                  // 나보다 이르거나 같은 마지막 일정
+      else if (before < 0) before = i;        // 나보다 늦은 첫 일정
+    });
+    var to;
+    if (after >= 0) to = after + 1;
+    else if (before >= 0) to = before;
+    else return false;                         // 비교할 시간이 없으면 그대로
+    // 이미 올바른 구간(이른 일정 뒤 ~ 늦은 일정 앞)에 있으면 건드리지 않음
+    var lo = after + 1, hi = before >= 0 ? before : rest.length;
+    if (from >= lo && from <= hi) return false;
+    rest.splice(to, 0, entry);
+    day.entries = rest;
+    return true;
+  }
+
+  // 다시 그린 뒤에도 입력 중이던 칸에 커서를 돌려놓기
+  function rerenderPanelsKeepFocus() {
+    var a = document.activeElement;
+    var entry = a && a._entry, cls = a && a.className;
+    renderPanels();
+    if (!entry) return;
+    var inputs = dayPanels.querySelectorAll("input, textarea");
+    for (var i = 0; i < inputs.length; i++) {
+      if (inputs[i]._entry === entry && inputs[i].className === cls) { inputs[i].focus(); break; }
+    }
+  }
+
+  /* ───────────── 지도 ───────────── */
+  var searchItems = [];        // 마지막 검색 결과 (지도 표시용)
+  var map = null, mapLayer = null, searchMarkers = [], dayMarkers = [], mapSig = "";
+  var mapMsg = document.getElementById("mapMsg");
+  var JEJU_CENTER = [37.62, 127.27]; // 남양주
+
+  function hasGeo(o) { return !!o && typeof o.lat === "number" && typeof o.lng === "number"; }
+  function clearGeo(o) {
+    if (!o) return;
+    if (o.lat !== undefined || o.geo !== undefined) { delete o.lat; delete o.lng; delete o.geo; }
+    scheduleGeo(2500);
+  }
+  // 메모가 주소처럼 보이는지 (일정 항목은 주소가 있을 때만 지도에 표시)
+  function looksLikeAddr(t) {
+    t = String(t || "");
+    return /(경기|서울|남양주|가평|양평|구리|하남)/.test(t) || /[가-힣0-9]+(로|길)\s*\d/.test(t);
+  }
+
+  (function initMap() {
+    var section = document.getElementById("mapSection");
+    if (typeof window.L === "undefined") { section.style.display = "none"; return; }
+    try {
+      map = L.map("map", { scrollWheelZoom: false }).setView(JEJU_CENTER, 11);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+      mapLayer = L.layerGroup().addTo(map);
+    } catch (e) { map = null; section.style.display = "none"; }
+  })();
+
+  function mkIcon(kind, text, size) {
+    return L.divIcon({
+      className: "",
+      html: '<div class="mk ' + kind + '" style="width:' + size + 'px;height:' + size + 'px">' + escapeHtml(text) + "</div>",
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
+    });
+  }
+  function popupNode(name, addr, tag) {
+    var d = document.createElement("div");
+    var n = document.createElement("div"); n.className = "pp-name"; n.textContent = (tag ? tag + " · " : "") + (name || "");
+    var a = document.createElement("div"); a.className = "pp-addr"; a.textContent = addr || "";
+    d.appendChild(n); d.appendChild(a);
+    return d;
+  }
+
+  function updateMap(forceFit) {
+    if (!map) return;
+    mapLayer.clearLayers();
+    searchMarkers = [];
+    dayMarkers = [];
+    var pts = [], sig = [];
+
+    // 숙소
+    state.logistics.forEach(function (lg) {
+      if (lg.label === "숙소" && hasGeo(lg)) {
+        L.marker([lg.lat, lg.lng], { icon: mkIcon("home", "숙", 26), zIndexOffset: 100 })
+          .bindPopup(popupNode(lg.value, lg.sub, "숙소")).addTo(mapLayer);
+        pts.push([lg.lat, lg.lng]); sig.push("h" + lg.lat);
+      }
+    });
+
+    // 선택한 날 일정: 번호 + 동선
+    var day = state.days[activeDay];
+    var route = [], n = 0, missing = 0;
+    if (day) {
+      day.entries.forEach(function (e) {
+        if (hasGeo(e)) {
+          n++;
+          var dm = L.marker([e.lat, e.lng], { icon: mkIcon("day", String(n), 26), zIndexOffset: 500 })
+            .bindPopup(popupNode(e.title, e.note, (e.time ? e.time + " " : "") + n + "번째"))
+            .bindTooltip(escapeHtml((e.time ? e.time + " " : "") + e.title), { permanent: true, direction: "right", offset: [14, 0], className: "mk-label day" })
+            .addTo(mapLayer);
+          dayMarkers.push({ entry: e, marker: dm, n: n });
+          route.push([e.lat, e.lng]); pts.push([e.lat, e.lng]); sig.push("d" + e.lat + "," + e.lng);
+        } else if (e.title && looksLikeAddr(e.note) && e.geo === 0) {
+          missing++;
+        }
+      });
+    }
+    if (route.length > 1) {
+      L.polyline(route, { color: "#e2762c", weight: 3, opacity: 0.85, dashArray: "6 6" }).addTo(mapLayer);
+    }
+
+    // 검색 결과
+    searchItems.forEach(function (it, idx) {
+      if (!hasGeo(it)) { searchMarkers.push(null); return; }
+      var m = L.marker([it.lat, it.lng], { icon: mkIcon("srch", String.fromCharCode(65 + idx), 26), zIndexOffset: 1000 })
+        .bindPopup(popupNode(it.name, it.addr, "검색"))
+        .bindTooltip(escapeHtml(it.name), { permanent: true, direction: "right", offset: [14, 0], className: "mk-label srch" })
+        .addTo(mapLayer);
+      searchMarkers.push(m);
+      pts.push([it.lat, it.lng]); sig.push("s" + it.lat + "," + it.lng);
+    });
+
+    var s = activeDay + "|" + sig.join(";");
+    if (forceFit || s !== mapSig) {
+      mapSig = s;
+      if (pts.length === 1) map.setView(pts[0], 13);
+      else if (pts.length > 1) map.fitBounds(pts, { padding: [32, 32], maxZoom: 14 });
+      else map.setView(JEJU_CENTER, 11);
+    }
+
+    if (mapMsg) {
+      if (!sync.url) mapMsg.textContent = "이 기기는 동기화가 연결되지 않아 일정 위치를 표시할 수 없어요. 위쪽 '동기화 설정'에서 연결하거나, 연결된 기기에서 '공유 링크 복사'로 받은 링크로 열어주세요.";
+      else mapMsg.textContent = missing ? "위치를 찾지 못한 일정이 " + missing + "곳 있어요. 후보지 검색으로 추가하면 정확히 표시돼요." : "";
+    }
+    scheduleGeo(600);
+  }
+
+  function focusDayEntry(entry) {
+    var hit = dayMarkers.filter(function (d) { return d.entry === entry; })[0];
+    if (!map || !hit) return;
+    document.getElementById("mapSection").scrollIntoView({ behavior: "smooth", block: "center" });
+    map.setView(hit.marker.getLatLng(), Math.max(map.getZoom(), 14));
+    hit.marker.openPopup();
+  }
+
+  function focusSearchMarker(idx) {
+    var m = searchMarkers[idx];
+    if (!map || !m) return;
+    map.setView(m.getLatLng(), Math.max(map.getZoom(), 12));
+    m.openPopup();
+    document.getElementById("mapSection").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* 좌표가 없는 장소는 네이버 검색으로 위치를 찾아 채웁니다 (동기화 연결 시). */
+  var geoTimer = null, geoRunning = false, geoDisabled = false;
+
+  function scheduleGeo(ms) {
+    if (!map || geoDisabled) return;
+    clearTimeout(geoTimer);
+    geoTimer = setTimeout(runGeo, ms);
+  }
+
+  function geoTargets() {
+    var list = [];
+    state.logistics.forEach(function (lg) {
+      if (lg.label === "숙소" && !hasGeo(lg) && lg.geo !== 0) {
+        list.push({ obj: lg, name: String(lg.value || "").replace(/\(.*?\)/g, "").trim(), addr: lg.sub || "" });
+      }
+    });
+    state.days.forEach(function (d) {
+      d.entries.forEach(function (e) {
+        if (!e.title || hasGeo(e) || e.geo === 0 || !looksLikeAddr(e.note)) return;
+        // 같은 이름의 후보지에 좌표가 있으면 그대로 사용
+        var same = state.candidates.filter(function (c) { return c.name === e.title && hasGeo(c); })[0];
+        if (same) { e.lat = same.lat; e.lng = same.lng; list.changed = true; return; }
+        list.push({ obj: e, name: e.title, addr: e.note || "" });
+      });
+    });
+    return list;
+  }
+
+  function regionOf(addr) {
+    var t = String(addr || "").split(/\s+/);
+    for (var i = 0; i < t.length; i++) if (/(읍|면|동|리)$/.test(t[i])) return t[i];
+    for (var j = 0; j < t.length; j++) if (/시$/.test(t[j])) return t[j];
+    return "남양주";
+  }
+  function roadOf(addr) {
+    var m = String(addr || "").match(/[가-힣0-9]+(로|길)/);
+    return m ? m[0] : "";
+  }
+
+  function geocode(name, addr) {
+    function ask(q) {
+      return jsonp(sync.url, "op=search&q=" + encodeURIComponent(q)).then(function (res) {
+        if (!res || !res.ok || !Array.isArray(res.items)) {
+          var er = new Error((res && res.error) || "search unavailable"); er.fatal = true; throw er;
+        }
+        if (!(res.v >= 4)) { var old = new Error("Code.gs v4 필요"); old.fatal = true; throw old; }
+        return res.items.filter(hasGeo);
+      });
+    }
+    function pick(items) {
+      var road = roadOf(addr);
+      var hit = road ? items.filter(function (it) { return String(it.addr || "").indexOf(road) >= 0; })[0] : null;
+      return hit || items[0] || null;
+    }
+    var region = regionOf(addr);
+    return ask(name + " " + region).then(function (items) {
+      if (items.length || region === "남양주") return pick(items);
+      return ask(name + " 남양주").then(pick);
+    });
+  }
+
+  function runGeo() {
+    if (geoRunning || geoDisabled || !sync.url || !map) return;
+    var owner = state;
+    var targets = geoTargets();
+    var changed = !!targets.changed;
+    if (!targets.length) {
+      if (changed) { scheduleWrite(); updateMap(); }
+      return;
+    }
+    geoRunning = true;
+    var i = 0;
+    function next() {
+      if (state !== owner || i >= targets.length) return Promise.resolve();
+      var t = targets[i++];
+      return geocode(t.name, t.addr).then(function (hit) {
+        if (state !== owner) return;
+        if (hit) { t.obj.lat = hit.lat; t.obj.lng = hit.lng; delete t.obj.geo; }
+        else { t.obj.geo = 0; }   // 못 찾음 표시 (이름·주소를 고치면 다시 시도)
+        changed = true;
+        return next();
+      });
+    }
+    next().catch(function (err) {
+      if (err && err.fatal) geoDisabled = true; // 검색을 쓸 수 없는 상태면 이번 접속에서는 중단
+    }).then(function () {
+      geoRunning = false;
+      if (state !== owner) { scheduleGeo(800); return; }
+      if (changed) { scheduleWrite(); updateMap(); }
+    });
+  }
+
+  /* ───────────── 장소 검색 ───────────── */
+  var searchInput = document.getElementById("searchInput");
+  var searchBtn = document.getElementById("searchBtn");
+  var searchMsg = document.getElementById("searchMsg");
+  var searchResults = document.getElementById("searchResults");
+  var searchClear = document.getElementById("searchClear");
+
+  function setSearchMsg(text, isErr) {
+    searchMsg.textContent = text || "";
+    searchMsg.className = "search-msg" + (isErr ? " err" : "");
+  }
+
+  function mapLink(item) {
+    // 이름 + 시/군 으로 네이버지도 검색 화면을 엽니다.
+    var region = String(item.addr || "").split(/\s+/)[1] || "";
+    return "https://map.naver.com/p/search/" + encodeURIComponent((item.name + " " + region).trim());
+  }
+
+  function hasCandidate(item) {
+    return state.candidates.some(function (c) { return c.name === item.name && c.addr === item.addr; });
+  }
+
+  function renderSearchResults(items) {
+    searchResults.innerHTML = "";
+    searchItems = items;
+    items.forEach(function (item, idx) {
+      var row = document.createElement("div");
+      row.className = "sr-item";
+
+      var located = typeof item.lat === "number" && typeof item.lng === "number";
+      var badge = document.createElement("div");
+      badge.className = "sr-badge" + (located ? "" : " none");
+      badge.textContent = located ? String.fromCharCode(65 + idx) : "–";
+      row.appendChild(badge);
+      searchClear.hidden = false;
+
+      var info = document.createElement("div");
+      info.className = "sr-info";
+      var name = document.createElement("div");
+      name.className = "sr-name";
+      name.textContent = item.name;
+      if (item.category) {
+        var cat = document.createElement("span");
+        cat.className = "sr-cat";
+        cat.textContent = item.category.split(">").pop().trim();
+        name.appendChild(cat);
+      }
+      var addr = document.createElement("div");
+      addr.className = "sr-addr";
+      addr.textContent = item.addr;
+      info.appendChild(name);
+      info.appendChild(addr);
+      info.title = "지도에서 위치 보기";
+      info.addEventListener("click", function () { focusSearchMarker(idx); });
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "sr-add";
+      if (hasCandidate(item)) { btn.textContent = "추가됨"; btn.disabled = true; }
+      else btn.textContent = "후보지에 추가";
+      btn.addEventListener("click", function () {
+        if (hasCandidate(item)) return;
+        var cand = { name: item.name, addr: item.addr, link: mapLink(item) };
+        if (typeof item.lat === "number" && typeof item.lng === "number") { cand.lat = item.lat; cand.lng = item.lng; }
+        state.candidates.push(cand);
+        scheduleWrite();
+        renderCandidates();
+        btn.textContent = "추가됨";
+        btn.disabled = true;
+      });
+
+      // 지금 선택된 Day의 일정에 바로 추가
+      var dayBtn = document.createElement("button");
+      dayBtn.type = "button";
+      dayBtn.className = "sr-add fill";
+      dayBtn.textContent = "일정에 추가";
+      dayBtn.addEventListener("click", function () {
+        var day = state.days[activeDay];
+        if (!day) return;
+        var ne = { time: "", title: item.name, note: item.addr || "" };
+        if (located) { ne.lat = item.lat; ne.lng = item.lng; }
+        day.entries.push(ne);
+        scheduleWrite();
+        renderTabs();
+        renderPanels();
+        toast(day.label + " " + day.date + " 일정에 추가했어요.");
+        dayBtn.textContent = "추가됨 ✓";
+        setTimeout(function () { dayBtn.textContent = "일정에 추가"; }, 1500);
+      });
+
+      var btns = document.createElement("div");
+      btns.className = "sr-btns";
+      btns.appendChild(dayBtn);
+      btns.appendChild(btn);
+
+      row.appendChild(info);
+      row.appendChild(btns);
+      searchResults.appendChild(row);
+    });
+    updateMap(true);
+  }
+
+  function runSearch() {
+    var q = searchInput.value.trim();
+    if (!q) { setSearchMsg("검색어를 입력해주세요.", true); return; }
+    if (!sync.url) { setSearchMsg("검색은 동기화를 연결한 뒤에 쓸 수 있어요. (동기화 설정)", true); return; }
+    searchBtn.disabled = true;
+    setSearchMsg("검색 중…");
+    jsonp(sync.url, "op=search&q=" + encodeURIComponent(q)).then(function (res) {
+      if (!res || !res.ok) throw new Error((res && res.error) || "검색에 실패했어요");
+      if (!Array.isArray(res.items)) throw new Error("Code.gs가 예전 버전이에요 (새 버전으로 다시 배포 필요)");
+      renderSearchResults(res.items);
+      if (!res.items.length) setSearchMsg("검색 결과가 없어요. 지역 이름을 함께 넣어보세요.");
+      else if (!(res.v >= 4)) setSearchMsg("지도에 위치를 표시하려면 새 Code.gs를 새 버전으로 배포해주세요.", true);
+      else setSearchMsg("결과를 누르면 지도에서 위치를 볼 수 있어요. '일정에 추가'는 위에서 선택한 Day에 들어갑니다.");
+    }).catch(function (err) {
+      searchResults.innerHTML = "";
+      searchItems = [];
+      searchClear.hidden = true;
+      updateMap();
+      setSearchMsg(String((err && err.message) || err), true);
+    }).then(function () { searchBtn.disabled = false; });
+  }
+
+  function clearSearch() {
+    searchItems = [];
+    searchResults.innerHTML = "";
+    searchInput.value = "";
+    searchClear.hidden = true;
+    setSearchMsg("");
+    updateMap(true);
+  }
+  searchClear.addEventListener("click", clearSearch);
+
+  searchBtn.addEventListener("click", runSearch);
+  searchInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); runSearch(); }
+  });
+
+  document.getElementById("addCand").addEventListener("click", function () {
+    state.candidates.push({ name: "", addr: "", link: "" });
+    scheduleWrite(); renderCandidates();
+  });
+
+  function renderPanels() {
+    dayPanels.innerHTML = "";
+    state.days.forEach(function (day, dIdx) {
+      var panel = document.createElement("div");
+      panel.className = "day-panel" + (dIdx === activeDay ? " active" : "");
+
+      var timeline = document.createElement("div");
+      timeline.className = "timeline";
+
+      if (day.entries.length === 0) {
+        var empty = document.createElement("div");
+        empty.className = "empty-note";
+        empty.textContent = "아직 비어있어요. 아래 버튼으로 일정을 추가해보세요.";
+        timeline.appendChild(empty);
+      }
+
+      day.entries.forEach(function (entry, eIdx) {
+        var row = document.createElement("div");
+        row.className = "entry";
+
+        var timeInput = document.createElement("input");
+        timeInput.className = "entry-time";
+        timeInput.type = "text";
+        timeInput.placeholder = "시간";
+        timeInput.value = entry.time || "";
+        timeInput.addEventListener("input", function () {
+          entry.time = timeInput.value;
+          scheduleWrite();
+        });
+        timeInput._entry = entry;
+        // 시간 입력을 마치면(칸을 벗어나거나 Enter) 시간순으로 다시 정렬
+        timeInput.addEventListener("change", function () {
+          setTimeout(function () {
+            if (placeByTime(day, entry)) { scheduleWrite(); rerenderPanelsKeepFocus(); }
+            else updateMap(); // 지도 라벨의 시간 갱신
+          }, 0);
+        });
+        timeInput.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter") timeInput.blur();
+        });
+
+        var body = document.createElement("div");
+        body.className = "entry-body";
+
+        var titleInput = document.createElement("input");
+        titleInput.className = "entry-title";
+        titleInput.type = "text";
+        titleInput.placeholder = "일정 제목";
+        titleInput.value = entry.title || "";
+        titleInput._entry = entry;
+        titleInput.addEventListener("input", function () {
+          entry.title = titleInput.value;
+          clearGeo(entry);
+          scheduleWrite();
+        });
+
+        var noteInput = document.createElement("textarea");
+        noteInput.className = "entry-note";
+        noteInput.rows = 1;
+        noteInput.placeholder = "메모 (선택)";
+        noteInput.value = entry.note || "";
+        noteInput._entry = entry;
+        noteInput.addEventListener("input", function () {
+          entry.note = noteInput.value;
+          clearGeo(entry);
+          scheduleWrite();
+          autoGrow(noteInput);
+        });
+
+        body.appendChild(titleInput);
+        body.appendChild(noteInput);
+
+        var delBtn = document.createElement("button");
+        delBtn.className = "entry-del";
+        delBtn.type = "button";
+        delBtn.innerHTML = "&times;";
+        delBtn.setAttribute("aria-label", "일정 삭제");
+        delBtn.addEventListener("click", function () {
+          day.entries.splice(eIdx, 1);
+          scheduleWrite();
+          renderPanels();
+          renderTabs();
+        });
+
+        row.appendChild(timeInput);
+        row.appendChild(body);
+        var ctl = document.createElement("div");
+        ctl.className = "entry-ctl";
+        [[-1, "▲", "위로 이동"], [1, "▼", "아래로 이동"]].forEach(function (cfg) {
+          var b = document.createElement("button");
+          b.className = "entry-move";
+          b.type = "button";
+          b.textContent = cfg[1];
+          b.setAttribute("aria-label", cfg[2]);
+          b.title = cfg[2];
+          var target = eIdx + cfg[0];
+          if (target < 0 || target >= day.entries.length) b.disabled = true;
+          b.addEventListener("click", function () {
+            if (target < 0 || target >= day.entries.length) return;
+            day.entries.splice(eIdx, 1);
+            day.entries.splice(target, 0, entry);
+            scheduleWrite();
+            renderPanels();
+          });
+          ctl.appendChild(b);
+        });
+        // 다른 날짜로 이동
+        var daySel = document.createElement("select");
+        daySel.className = "entry-day";
+        daySel.setAttribute("aria-label", "날짜 이동");
+        daySel.title = "다른 날짜로 이동";
+        state.days.forEach(function (d, di) {
+          var o = document.createElement("option");
+          o.value = di;
+          o.textContent = d.label;
+          if (di === dIdx) o.selected = true;
+          daySel.appendChild(o);
+        });
+        daySel.addEventListener("change", function () {
+          var to = parseInt(daySel.value, 10);
+          var target = state.days[to];
+          var at = day.entries.indexOf(entry);
+          if (!target || to === dIdx || at < 0) return;
+          day.entries.splice(at, 1);
+          target.entries.push(entry);
+          placeByTime(target, entry); // 시간이 있으면 그날의 시간 순서에 맞는 자리로
+          scheduleWrite();
+          renderTabs();
+          renderPanels();
+          toast((entry.title || "일정") + " → " + target.label + " " + target.date + "(으)로 옮겼어요.");
+        });
+        if (hasGeo(entry)) {
+          var pin = document.createElement("button");
+          pin.className = "entry-pin";
+          pin.type = "button";
+          pin.title = "지도에서 보기";
+          pin.setAttribute("aria-label", "지도에서 보기");
+          pin.textContent = "📍";
+          pin.addEventListener("click", function () { focusDayEntry(entry); });
+          ctl.insertBefore(pin, ctl.firstChild);
+        }
+        ctl.appendChild(daySel);
+        ctl.appendChild(delBtn);
+        row.appendChild(ctl);
+        timeline.appendChild(row);
+
+        requestAnimationFrame(function () { autoGrow(noteInput); });
+      });
+
+      panel.appendChild(timeline);
+
+      var addBtn = document.createElement("button");
+      addBtn.className = "add-row";
+      addBtn.type = "button";
+      addBtn.textContent = "+ 일정 추가";
+      addBtn.addEventListener("click", function () {
+        day.entries.push({ time: "", title: "", note: "" });
+        scheduleWrite();
+        renderPanels();
+        renderTabs();
+      });
+      panel.appendChild(addBtn);
+
+      dayPanels.appendChild(panel);
+    });
+    updateMap();
+  }
+
+  renderLogistics();
+  renderTabs();
+  renderPanels();
+  renderCandidates();
+  loadMeta();
+
+  // 공유 링크(#sync=주소)로 들어온 경우 자동 연결
+  (function readShareLink() {
+    var m = location.hash.match(/[#&]sync=([^&]+)/);
+    if (!m) return;
+    var u = "";
+    try { u = decodeURIComponent(m[1]); } catch (e) { u = ""; }
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+    if (!isValidUrl(u) || u === sync.url) return;
+    var ok = window.confirm(
+      "공유 받은 동기화 주소로 연결할까요?\n" +
+      "연결하면 이 브라우저의 일정이 공유 중인 일정으로 바뀝니다."
+    );
+    if (ok) {
+      sync.url = u;
+      sync.rev = null;
+      sync.dirty = false;
+      saveMeta();
+    }
+  })();
+
+  syncNow();
+})();
+</script>
+
+</body>
+</html>
